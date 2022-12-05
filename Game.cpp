@@ -5,32 +5,21 @@
 #pragma region gameFunctions											
 void Start()
 {
-	// initialize game resources here
+	InitializeMaze();
 
 }
 
 void Draw()
 {
 	ClearBackground();
-
+	DrawMaze();
 	// Put your own draw statements here
 
 }
 
 void Update(float elapsedSec)
 {
-	// process input, do physics 
-
-	// e.g. Check keyboard state
-	//const Uint8 *pStates = SDL_GetKeyboardState( nullptr );
-	//if ( pStates[SDL_SCANCODE_RIGHT] )
-	//{
-	//	std::cout << "Right arrow key is down\n";
-	//}
-	//if ( pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP])
-	//{
-	//	std::cout << "Left and up arrow keys are down\n";
-	//}
+	UpdatePlayerPos();
 }
 
 void End()
@@ -97,5 +86,38 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
+void InitializeMaze()
+{
+	for (size_t i = 1; i < 10; i++)
+	{
+		g_MazeArray[i][1] = 1;
+	}
+	g_MazeArray[9][1] = 2;
 
+}
+void DrawMaze()
+{
+	
+	for (size_t i = 0; i < g_NrOfRows; i++)
+	{
+		for (size_t j = 0; j < g_NrOfCols; j++)
+		{
+			if (g_MazeArray[i][j] == 0)
+				SetColor(0.5f, 0.5f, 0.5f);
+			else if (g_MazeArray[i][j] == 1)
+				SetColor(0.5f, 1.f, 0.5f);
+			else if (g_MazeArray[i][j] == 2)
+				SetColor(1.f, 1.f, 0.f);
+			else if (g_MazeArray[i][j] == 3)
+				SetColor(1.f, 0.f, 0.f);
+			FillRect(g_BlockSize * i, g_BlockSize * j, g_BlockSize, g_BlockSize);
+			SetColor(1.f, 1.f, 1.f);
+			DrawRect(g_BlockSize * i, g_BlockSize * j, g_BlockSize, g_BlockSize);
+		}
+	}
+}
+void UpdatePlayerPos()
+{
+	g_MazeArray[g_Player1.x][g_Player1.y] = 3;
+}
 #pragma endregion ownDefinitions

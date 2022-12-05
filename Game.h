@@ -6,16 +6,34 @@ std::string g_WindowTitle{ "Project name - Name, firstname - 1DAExx" };
 
 // Change the window dimensions here
 float g_WindowWidth{ 500 };
-float g_WindowHeight{ 300 };
+float g_WindowHeight{ 500 };
 #pragma endregion gameInformation
 
 
 
 #pragma region ownDeclarations
 // Declare your own global variables here
+const int g_NrOfRows{ 12 }, g_NrOfCols{ 12 };
+int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
+const float g_BlockSize{ 42.f };
 
+enum class Direction {
+	up = 1,
+	left = -1,
+	right = 1,
+	down = -1
+}; Direction g_CurrDir{};
+
+struct Player {
+	int x;
+	int y;
+	Texture texture;
+};
+Player g_Player1{ 1,1 };
 // Declare your own functions here
-
+void InitializeMaze();
+void DrawMaze();
+void UpdatePlayerPos();
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											
