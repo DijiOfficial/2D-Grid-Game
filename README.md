@@ -14,10 +14,3 @@ It's a simple 2D grid game where you move through a maze to get the treasure at 
 The first level looks like this (starting as a red tile, treasure as a yellow tile)
 
 ![maze](assets/img/map.png)
-
-## BONUS
-
-- Try to implement the next levels, so when you finished a maze a new one pops up.
-- You could also create levels of your own
-- Display the time spent to solve the maze
-- Make it pretty!
