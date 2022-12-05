@@ -20,6 +20,7 @@ void Update(float elapsedSec)
 {
 	// process input, do physics 
 
+
 	// e.g. Check keyboard state
 	//const Uint8 *pStates = SDL_GetKeyboardState( nullptr );
 	//if ( pStates[SDL_SCANCODE_RIGHT] )
