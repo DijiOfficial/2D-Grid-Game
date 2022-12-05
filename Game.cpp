@@ -6,6 +6,7 @@
 void Start()
 {
 	// initialize game resources here
+
 }
 
 void Draw()
