@@ -18,22 +18,32 @@ int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
 const float g_BlockSize{ 42.f };
 
 enum class Direction {
-	up = 1,
+	up = 2,
 	left = -1,
 	right = 1,
-	down = -1
-}; Direction g_CurrDir{};
+	down = -2
+}; 
+
+enum class MazeEntity {
+	path = 1,
+	wall = 0,
+	player1 = 3,
+	endPoint = 2,
+	enemy = 4
+}; 
 
 struct Player {
 	int x;
 	int y;
 	Texture texture;
 };
-Player g_Player1{ 1,1 };
+Player g_Player1{ 1,1 }, g_Enemy1{};
 // Declare your own functions here
 void InitializeMaze();
 void DrawMaze();
-void UpdatePlayerPos();
+void UpdatePlayer1Pos();
+void MovePlayer(const Direction& dir);
+void UpdateEnemyPos();
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

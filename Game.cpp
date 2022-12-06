@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Game.h"
+#include <iostream>
 
 //Basic game functions
 #pragma region gameFunctions											
@@ -19,23 +20,8 @@ void Draw()
 
 void Update(float elapsedSec)
 {
-<<<<<<< HEAD
-	// process input, do physics 
-
-
-	// e.g. Check keyboard state
-	//const Uint8 *pStates = SDL_GetKeyboardState( nullptr );
-	//if ( pStates[SDL_SCANCODE_RIGHT] )
-	//{
-	//	std::cout << "Right arrow key is down\n";
-	//}
-	//if ( pStates[SDL_SCANCODE_LEFT] && pStates[SDL_SCANCODE_UP])
-	//{
-	//	std::cout << "Left and up arrow keys are down\n";
-	//}
-=======
-	UpdatePlayerPos();
->>>>>>> Ioana
+	UpdatePlayer1Pos();
+	UpdateEnemyPos();
 }
 
 void End()
@@ -48,7 +34,25 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-
+	switch (key)
+	{
+	case SDLK_LEFT:
+		
+		MovePlayer(Direction::left);
+		break;
+	case SDLK_RIGHT:
+		
+		MovePlayer(Direction::right);
+		break;
+	case SDLK_UP:
+		
+		MovePlayer(Direction::up);
+		break;
+	case SDLK_DOWN:
+		
+		MovePlayer(Direction::down);
+		break;
+	}
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
@@ -106,34 +110,69 @@ void InitializeMaze()
 {
 	for (size_t i = 1; i < 10; i++)
 	{
-		g_MazeArray[i][1] = 1;
+		g_MazeArray[i][1] = int(MazeEntity::path);
 	}
-	g_MazeArray[9][1] = 2;
-
+	for (size_t i = 1; i < 10; i++)
+	{
+		g_MazeArray[i][2] = int(MazeEntity::path);
+	}
+	g_MazeArray[9][1] = int(MazeEntity::endPoint);
+	g_Enemy1.x = 9;
+	g_Enemy1.y = 2;
 }
 void DrawMaze()
 {
-	
+
 	for (size_t i = 0; i < g_NrOfRows; i++)
 	{
 		for (size_t j = 0; j < g_NrOfCols; j++)
 		{
-			if (g_MazeArray[i][j] == 0)
+			if (g_MazeArray[i][j] == int(MazeEntity::wall))
 				SetColor(0.5f, 0.5f, 0.5f);
-			else if (g_MazeArray[i][j] == 1)
+			else if (g_MazeArray[i][j] == int(MazeEntity::path))
 				SetColor(0.5f, 1.f, 0.5f);
-			else if (g_MazeArray[i][j] == 2)
+			else if (g_MazeArray[i][j] == int(MazeEntity::endPoint))
 				SetColor(1.f, 1.f, 0.f);
-			else if (g_MazeArray[i][j] == 3)
+			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
 				SetColor(1.f, 0.f, 0.f);
+			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
+				SetColor(1.f, 0.f, 1.f);
 			FillRect(g_BlockSize * i, g_BlockSize * j, g_BlockSize, g_BlockSize);
 			SetColor(1.f, 1.f, 1.f);
 			DrawRect(g_BlockSize * i, g_BlockSize * j, g_BlockSize, g_BlockSize);
 		}
 	}
 }
-void UpdatePlayerPos()
+void UpdatePlayer1Pos()
 {
-	g_MazeArray[g_Player1.x][g_Player1.y] = 3;
+	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
+}
+void MovePlayer(const Direction& dir)
+{
+	if (dir == Direction::left || dir == Direction::right)
+	{	
+		if (g_MazeArray[g_Player1.x + int(dir)][g_Player1.y] == int(MazeEntity::path))
+		{
+			g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::path);
+			g_Player1.x += int(dir);
+		}
+		else if (g_MazeArray[g_Player1.x + int(dir)][g_Player1.y] == int(MazeEntity::endPoint))
+			std::cout << "You won!";
+
+	}
+	else if (dir == Direction::up || dir == Direction::down)
+	{
+		if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir)/2] == int(MazeEntity::path))
+		{
+			g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::path);
+			g_Player1.y += int(dir)/2 ;
+		}
+		else if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir)/2 ] == int(MazeEntity::endPoint))
+			std::cout << "You won!";
+	}
+}
+void UpdateEnemyPos()
+{
+	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy);
 }
 #pragma endregion ownDefinitions
