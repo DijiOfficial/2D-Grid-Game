@@ -6,15 +6,15 @@ using namespace utils;
 std::string g_WindowTitle{ "Project name - Name, firstname - 1DAExx" };
 
 // Change the window dimensions here
-float g_WindowWidth{ 500 };
-float g_WindowHeight{ 500 };
+float g_WindowWidth{ 800 };
+float g_WindowHeight{ 800 };
 #pragma endregion gameInformation
 
 
 
 #pragma region ownDeclarations
 // Declare your own global variables here
-const int g_NrOfRows{ 25 }, g_NrOfCols{ 30 };
+const int g_NrOfRows{ 40 }, g_NrOfCols{ 40 };
 int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
 const float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
 const float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
@@ -47,6 +47,8 @@ struct Player {
 	Texture texture;
 	Direction currDir;
 	int totalMovement;
+	bool isFollowing;
+	bool isPlayableCharacter; //not in use yet
 };
 Player g_Player1{ 1,1 }, g_Enemy1{};
 // Declare your own functions here
@@ -57,6 +59,10 @@ void MovePlayer(const Direction& dir);
 void UpdateEnemyPos(const int movement, Player& entity);
 void UpdateTime();
 void MoveEntity(const Direction& dir, Player& entity);
+bool IsMazeCellPLayerOrPath(Player& entity);
+bool IsEnemyPassedPLayer(Player& entity);
+void SwitchEntityDirection(Player& entity);
+bool IsDirectionCorrect(Player& entity);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

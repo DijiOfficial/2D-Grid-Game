@@ -143,6 +143,12 @@ void InitializeMaze()
 		g_MazeArray[15][j+10] = int(MazeEntity::wall);
 		g_MazeArray[j+10][15] = int(MazeEntity::wall);
 	}
+
+	g_MazeArray[25][25] = int(MazeEntity::wall);
+	g_MazeArray[20][25] = int(MazeEntity::wall);
+	g_MazeArray[25][20] = int(MazeEntity::wall);
+	g_MazeArray[20][20] = int(MazeEntity::wall);
+
 	//for (size_t i = 1; i < 10; i++)
 	//{
 	//	g_MazeArray[i][2] = int(MazeEntity::path);
@@ -207,6 +213,7 @@ void MovePlayer(const Direction& dir)
 
 void MoveEntity(const Direction& dir, Player& entity)
 {
+	entity.currDir = dir;
 	if (dir == Direction::left || dir == Direction::right)
 	{
 		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
@@ -232,30 +239,101 @@ void MoveEntity(const Direction& dir, Player& entity)
 			std::cout << "You won!";
 	}
 }
-
-void UpdateEnemyPos(const int movement, Player& entity)
+bool IsMazeCellPLayerOrPath(Player& entity)
 {
-
+	bool firstCondition{}, secondCondition{};
 	switch (entity.currDir)
 	{
 		case Direction::up:
-			MoveEntity(Direction::up, entity);
-			if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::down;
-			break;
 		case Direction::down:
-			MoveEntity(Direction::down, entity);
-			if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::up;
-			break;
-		case Direction::right:
-			MoveEntity(Direction::right, entity);
-			if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::left;
+			firstCondition = g_MazeArray[entity.x ][entity.y + int(entity.currDir) / 2] == int(MazeEntity::path);
+			secondCondition = g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] == int(MazeEntity::player1);
 			break;
 		case Direction::left:
-			MoveEntity(Direction::left, entity);
-			if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::right;
+		case Direction::right:
+			firstCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::path);
+			secondCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::player1);
 			break;
 		default:
 			break;
+	}
+	std::cout << "Entity at pos + 1y: " << g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] << ", first:" << firstCondition << ",second: " << secondCondition << std::endl;
+	return firstCondition or secondCondition;
+}
+
+bool IsEnemyPassedPLayer(Player& entity)
+{
+	return g_Player1.x == entity.x or g_Player1.y == entity.y;
+}
+
+void SwitchEntityDirection(Player& entity)
+{
+	if (g_Player1.x > entity.x) entity.currDir = Direction::right;
+	else if (g_Player1.x < entity.x) entity.currDir = Direction::left;
+	else if (g_Player1.y > entity.y) entity.currDir = Direction::up;
+	else if (g_Player1.y < entity.y) entity.currDir = Direction::down;
+}
+
+bool IsDirectionCorrect(Player& entity)
+{
+	if (g_Player1.x > entity.x and entity.currDir == Direction::right) return true;
+	else if (g_Player1.x < entity.x and entity.currDir == Direction::left) return true ;
+	else if (g_Player1.y > entity.y and entity.currDir == Direction::up) return true ;
+	else if (g_Player1.y < entity.y and entity.currDir == Direction::down) return true;
+	return false;
+}
+
+void UpdateEnemyPos(const int movement, Player& entity)
+{
+	if (sqrt(pow(g_Player1.x - entity.x, 2) + pow(g_Player1.y - entity.y, 2)) <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
+	else if (sqrt(pow(g_Player1.x - entity.x, 2) + pow(g_Player1.y - entity.y, 2)) >= 20) entity.isFollowing = false;
+	if (entity.isFollowing)
+	{
+		if (!IsMazeCellPLayerOrPath(entity) or IsEnemyPassedPLayer(entity)) SwitchEntityDirection(entity);
+		else if (!IsMazeCellPLayerOrPath(entity))
+		{
+			switch (entity.currDir)
+				{
+					case Direction::up:
+					case Direction::down:
+						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::right, entity);
+						else MoveEntity(Direction::left, entity);
+						break;
+					case Direction::left:
+					case Direction::right:
+						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::up, entity);
+						else MoveEntity(Direction::down, entity);
+						break;
+					default:
+						break;
+				}
+		}
+		if (!IsDirectionCorrect(entity)) SwitchEntityDirection(entity);
+		MoveEntity(entity.currDir, entity);
+	}
+	else
+	{
+		switch (entity.currDir)
+		{
+			case Direction::up:
+				MoveEntity(Direction::up, entity);
+				if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::down;
+				break;
+			case Direction::down:
+				MoveEntity(Direction::down, entity);
+				if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::up;
+				break;
+			case Direction::right:
+				MoveEntity(Direction::right, entity);
+				if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::left;
+				break;
+			case Direction::left:
+				MoveEntity(Direction::left, entity);
+				if (entity.totalMovement == 0 or abs(entity.totalMovement) == movement) entity.currDir = Direction::right;
+				break;
+			default:
+				break;
+		}
 	}
 	g_MazeArray[entity.x][entity.y] = int(MazeEntity::enemy);
 }
