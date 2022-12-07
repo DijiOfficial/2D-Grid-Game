@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 using namespace utils;
 #pragma region gameInformation
 // Set your name and group in the title here
@@ -13,9 +14,17 @@ float g_WindowHeight{ 500 };
 
 #pragma region ownDeclarations
 // Declare your own global variables here
-const int g_NrOfRows{ 12 }, g_NrOfCols{ 12 };
+const int g_NrOfRows{ 25 }, g_NrOfCols{ 30 };
 int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
-const float g_BlockSize{ 42.f };
+const float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
+const float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
+int g_Nrframes{ 1 };
+const int g_RefreshFrame{ 100 };
+const float g_EnnemySpeed{ 0.5f };
+float g_TotalTimePassed{};
+
+std::chrono::time_point<std::chrono::system_clock> g_TimeStart, g_TimeEnd;
+std::chrono::duration<float> g_DeltaTime;
 
 enum class Direction {
 	up = 2,
@@ -36,6 +45,8 @@ struct Player {
 	int x;
 	int y;
 	Texture texture;
+	Direction currDir;
+	int totalMovement;
 };
 Player g_Player1{ 1,1 }, g_Enemy1{};
 // Declare your own functions here
@@ -43,7 +54,9 @@ void InitializeMaze();
 void DrawMaze();
 void UpdatePlayer1Pos();
 void MovePlayer(const Direction& dir);
-void UpdateEnemyPos();
+void UpdateEnemyPos(const int movement, Player& entity);
+void UpdateTime();
+void MoveEntity(const Direction& dir, Player& entity);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											
