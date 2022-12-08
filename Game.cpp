@@ -8,13 +8,7 @@
 #pragma region gameFunctions											
 void Start()
 {
-	TextureFromFile("resources/start-game-background.jpg", g_StartPage);
-	TextureFromFile("resources/start-game-button.jpg", g_StartButton);
-	TextureFromFile("resources/retry-game-button.jpg", g_RetryButton);
-
-	TextureFromFile("resources/path.jpg", g_PathTexture);
-	TextureFromFile("resources/end-point.jpg", g_EndPointTexture);
-	TextureFromFile("resources/wall.jpg", g_WallTexture);
+	InitializeTextures();
 
 	const int playerStartPosX{ 1 }, playerStartPosY{ 1 }, enemyStartPosX{ 18 }, enemyStartPosY{ 18 };
 	InitializeMaze();
@@ -30,11 +24,12 @@ void Start()
 void Draw()
 {
 	ClearBackground();
-	if(g_IsGameStarted)
+
+	if (g_IsGameStarted)
 	{
 		if (IsGameLost())
 		{
-			DrawTexture(g_StartPage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
+			DrawTexture(g_LostGamePage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
 			DrawTexture(g_RetryButton, g_ButtonRect);
 		}
 		else
@@ -55,16 +50,7 @@ void Update(float elapsedSec)
 	UpdatePlayerPos(g_Player1);
 	//UpdateEnemyPos(5);
 	UpdateTime();
-	if (!g_Enemy1.isFollowing)
-	{
-		TextureFromFile("resources/enemy-texture1.jpg",g_Enemy1.texture);
-		TextureFromFile("resources/player-texture1.jpg",g_Player1.texture);
-	}
-	else
-	{
-		TextureFromFile("resources/enemy-texture2.jpg", g_Enemy1.texture);
-		TextureFromFile("resources/player-texture2.jpg", g_Player1.texture);
-	}
+
 }
 
 void End()
@@ -76,14 +62,7 @@ void End()
 	}
 	delete[] g_MazeArray;
 
-	DeleteTexture(g_StartButton);
-	DeleteTexture(g_StartPage);
-	DeleteTexture(g_RetryButton);
-	DeleteTexture(g_WallTexture);
-	DeleteTexture(g_PathTexture);
-	DeleteTexture(g_EndPointTexture);
-	DeleteTexture(g_Player1.texture);
-	DeleteTexture(g_Enemy1.texture);
+	DeleteTextures();
 }
 #pragma endregion gameFunctions
 
@@ -142,26 +121,26 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 
 void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 {
-	
+
 	switch (e.button)
 	{
 	case SDL_BUTTON_LEFT:
 	{	Point2f mousePos{ float(e.x), float(g_WindowHeight - e.y) };
-		if(!g_IsGameStarted)
+	if (!g_IsGameStarted)
+	{
+		if (IsPointInRect(mousePos, g_ButtonRect))
+			g_IsGameStarted = true;
+	}
+	if (IsGameLost())
+	{
+		if (IsPointInRect(mousePos, g_ButtonRect))
 		{
-			if (IsPointInRect(mousePos, g_ButtonRect))
-				g_IsGameStarted = true;
+			const int playerStartPosX{ 1 }, playerStartPosY{ 1 }, enemyStartPosX{ 18 }, enemyStartPosY{ 18 };
+			InitializeMaze();
+			InitializeGameResources(playerStartPosX, playerStartPosY, enemyStartPosX, enemyStartPosY);
 		}
-		if (IsGameLost())
-		{
-			if (IsPointInRect(mousePos, g_ButtonRect))
-			{
-				const int playerStartPosX{ 1 }, playerStartPosY{ 1 }, enemyStartPosX{ 18 }, enemyStartPosY{ 18 };
-				InitializeMaze();
-				InitializeGameResources(playerStartPosX, playerStartPosY, enemyStartPosX, enemyStartPosY);
-			}
-		}
-		break;
+	}
+	break;
 	}
 	}
 }
@@ -264,12 +243,14 @@ void UpdateTime()
 	const int refreshFrame{ 100 };
 	const float enemySpeed{ 0.5f };
 	++g_Nrframes;
+
 	if (g_Nrframes % refreshFrame == 0)
 	{
 		g_TimeEnd = std::chrono::system_clock::now();
 		g_DeltaTime = g_TimeEnd - g_TimeStart;
 		g_TotalTimePassed += g_DeltaTime.count();
 		g_TimeStart = std::chrono::system_clock::now();
+		g_Nrframes = 0;
 	}
 
 	if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
@@ -319,10 +300,11 @@ void InitializeGameResources(int playerStartPosX, int playerStartPosY, int enemy
 	g_Enemy1.currDir = Direction::right;
 
 	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy);
-	g_TimeStart = std::chrono::system_clock::now();
+	//g_TimeStart = std::chrono::system_clock::now();
 	g_Player1.isPlayableCharacter = true;
 	g_Enemy1.isPlayableCharacter = false;
 }
+
 void DrawMaze()
 {
 
@@ -333,25 +315,26 @@ void DrawMaze()
 			Rectf cellRect{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
 			if (g_MazeArray[i][j] == int(MazeEntity::wall))
 				DrawTexture(g_WallTexture, cellRect);
-				//SetColor(0.5f, 0.5f, 0.5f);
+			//SetColor(0.5f, 0.5f, 0.5f);
 			else if (g_MazeArray[i][j] == int(MazeEntity::path))
 				DrawTexture(g_PathTexture, cellRect);
-				//SetColor(0.5f, 1.f, 0.5f);
+			//SetColor(0.5f, 1.f, 0.5f);
 			else if (g_MazeArray[i][j] == int(MazeEntity::endPoint))
 				//SetColor(1.f, 1.f, 0.f);
 				DrawTexture(g_EndPointTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
 				DrawTexture(g_Player1.texture, cellRect);
-				//SetColor(1.f, 0.f, 0.f);
+			//SetColor(1.f, 0.f, 0.f);
 			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
 				DrawTexture(g_Enemy1.texture, cellRect);
-				//SetColor(1.f, 0.f, 1.f);
-			//FillRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
+			//SetColor(1.f, 0.f, 1.f);
+		//FillRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
 			SetColor(1.f, 1.f, 1.f);
 			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
 		}
 	}
 }
+
 void UpdatePlayerPos(const Entity& player)
 {
 	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
@@ -366,8 +349,8 @@ void MoveEntity(const Direction& dir, Entity& entity)
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.x += int(dir);
-			if(entity.isPlayableCharacter == false)
-			entity.totalMovement += int(dir);
+			if (entity.isPlayableCharacter == false)
+				entity.totalMovement += int(dir);
 		}
 		else if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
 		{
@@ -383,7 +366,7 @@ void MoveEntity(const Direction& dir, Entity& entity)
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.y += int(dir) / 2;
 			if (entity.isPlayableCharacter == false)
-			entity.totalMovement += int(dir) / 2;
+				entity.totalMovement += int(dir) / 2;
 
 		}
 		else if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
@@ -510,5 +493,32 @@ bool IsGameLost()
 		return (g_Player1.x == g_Enemy1.x + 1 || g_Player1.x == g_Enemy1.x - 1);
 
 	return false;
+}
+
+void DeleteTextures()
+{
+	DeleteTexture(g_StartButton);
+	DeleteTexture(g_StartPage);
+	DeleteTexture(g_RetryButton);
+	DeleteTexture(g_WallTexture);
+	DeleteTexture(g_PathTexture);
+	DeleteTexture(g_EndPointTexture);
+	DeleteTexture(g_Player1.texture);
+	DeleteTexture(g_Enemy1.texture);
+	DeleteTexture(g_LostGamePage);
+}
+
+void InitializeTextures()
+{
+	TextureFromFile("resources/start-game-background.jpg", g_StartPage);
+	TextureFromFile("resources/game-lost-background.jpg", g_LostGamePage);
+	TextureFromFile("resources/start-game-button.png", g_StartButton);
+	TextureFromFile("resources/retry-game-button.png", g_RetryButton);
+
+	TextureFromFile("resources/path.jpg", g_PathTexture);
+	TextureFromFile("resources/end-point.jpg", g_EndPointTexture);
+	TextureFromFile("resources/wall.jpg", g_WallTexture);
+	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
+	TextureFromFile("resources/player-texture.jpg", g_Player1.texture);
 }
 #pragma endregion ownDefinitions

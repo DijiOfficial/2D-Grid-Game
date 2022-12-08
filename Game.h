@@ -14,18 +14,17 @@ float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more column
 	
 
 #pragma region ownDeclarations
-// Declare your own global variables here
+// Maze variables
 int g_NrOfRows{ 25 }, g_NrOfCols{ 25 };
 int** g_MazeArray = new int* [g_NrOfRows];
-//int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
-
+////int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
 const float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
 const float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
 
+// Enemy UpdateTime
 int g_Nrframes{ 1 };
 float g_TotalTimePassed{};
-
-std::chrono::time_point<std::chrono::system_clock> g_TimeStart, g_TimeEnd;
+std::chrono::time_point<std::chrono::system_clock> g_TimeStart{}, g_TimeEnd{};
 std::chrono::duration<float> g_DeltaTime;
 
 enum class Direction {
@@ -50,12 +49,13 @@ struct Entity {
 	bool isFollowing;
 	bool isPlayableCharacter; //not in use yet
 };
-
 Entity g_Player1{ }, g_Enemy1{};
+
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{};
 Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false };
+
 // Declare your own functions here
 void InitializeGameResources(int playerStartPosX, int playerStartPosY, int enemyStartPosX, int enemyStartPosY);
 void InitializeMaze();
@@ -68,13 +68,14 @@ bool IsMazeCellPLayerOrPath(Entity& entity);
 bool IsEnemyPassedPLayer(Entity& entity);
 void SwitchEntityDirection(Entity& entity);
 bool IsDirectionCorrect(Entity& entity);
-
 void GenerateNewMaze();
 void Display2DArray();
 void DepthFirstSearch(int x, int y);
 bool isValidPos(int x, int y, int rows, int cols);
 std::vector<Point2i> getAdjacentArray(int x, int y);
 bool IsGameLost();
+void DeleteTextures();
+void InitializeTextures();
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											
