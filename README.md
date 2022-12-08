@@ -20,6 +20,20 @@ Base game plan
   -> implement the movement in the KeyDownEvent()
   -> cout "You won" message
 
+Checklist
+ - randomly generate the maze
+ - generate the endPoint 
+ - fix the enemy AI 
+ - after reaching the endPoint ,generate new level
+ - create the textures
+ - add collision with the enemies (game lost titlescreen)
+ - add a start screen
+
+Extras
+ - add a timer (difficulty setting) -> normal or hard (timed)
+ - add 3 types of enemies with different speeds
+ - add a way to kill/shoot the enemy 
+
 
 The first level looks like this (starting as a red tile, treasure as a yellow tile)
 

@@ -70,7 +70,11 @@ namespace utils
 #pragma endregion TextureFunctionality
 
 #pragma region CollisionFunctionality
-
+	float GetDistance(float pointAx, float pointAy, float pointBx, float pointBy);
+	float GetDistance(const Point2f& pointA, const Point2f& pointB);
+	bool IsPointInRect(float pointX, float pointY, float rectX, float rectY, float length, float height);
+	bool IsPointInRect(const Point2f& pointPos, const Point2f& rectPos, float length, float height);
+	bool IsPointInRect(const Point2f& pointPos, const Rectf& rect);
 #pragma endregion CollisionFunctionality
 
 }

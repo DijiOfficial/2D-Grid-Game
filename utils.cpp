@@ -492,7 +492,29 @@ namespace utils
 
 
 #pragma region CollisionFunctionality
-
+	
+	float GetDistance(const float pointAx, const  float pointAy, const  float pointBx, const  float pointBy)
+	{
+		float x = pointBx - pointAx;
+		float y = pointBy - pointAy;
+		return sqrtf(x * x + y * y);
+	}
+	float GetDistance(const Point2f& pointA, const Point2f& pointB)
+	{
+		return GetDistance(pointA.x, pointA.y, pointB.x, pointB.y);
+	}
+	bool IsPointInRect(float pointX, float pointY, float rectX, float rectY, float length, float height)
+	{
+		return ((pointX >= rectX && pointX < rectX + length) && (pointY >= rectY && pointY < rectY + height));
+	}
+	bool IsPointInRect(const Point2f& pointPos, const Point2f& rectPos, float length, float height)
+	{
+		return IsPointInRect(pointPos.x, pointPos.y, rectPos.x, rectPos.y, length, height);
+	}
+	bool IsPointInRect(const Point2f& pointPos, const Rectf& rect)
+	{
+		return IsPointInRect(pointPos.x, pointPos.y, rect.left, rect.bottom, rect.width, rect.height);
+	}
 
 #pragma endregion CollisionFunctionality
 }
