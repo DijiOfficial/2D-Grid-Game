@@ -152,6 +152,11 @@ void GenerateNewMaze()
 {
 	int cols{ rand() % 21 + 30 };
 	int rows{ cols };
+	g_BlockSizeX = { g_WindowWidth / rows };
+	g_BlockSizeY = { g_WindowHeight / cols };
+
+	//clear the player before generating
+	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::path);
 
 	//create new array
 	int** newMazeArray = new int* [rows];
@@ -165,7 +170,7 @@ void GenerateNewMaze()
 		delete[] g_MazeArray[i];
 	}
 	delete[] g_MazeArray;
-	//rename new one
+	//reassign new one
 	g_MazeArray = newMazeArray;
 	g_NrOfRows = rows;
 	g_NrOfCols = cols;
@@ -178,32 +183,33 @@ void GenerateNewMaze()
 		}
 	}
 
-	int startX{ rand() % g_NrOfRows };
-	int startY{ rand() % g_NrOfCols };
-	DepthFirstSearch(startX, startY);
-	g_MazeArray[startX][startY] = int(MazeEntity::player1);
-	Display2DArray();
+	//int startX{ rand() % g_NrOfRows };
+	//int startY{ rand() % g_NrOfCols };
+
+	DepthFirstSearch(g_Player1.x, g_Player1.y);
+	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
+	//Display2DArray();
 }
 
 std::vector<Point2i> getAdjacentArray(int x, int y)
 {
 	std::vector<Point2i> validPos{};
 
-	if (isValidPos(x - 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y - 2 });
+	//if (isValidPos(x - 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y - 2 });
 	if (isValidPos(x - 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y });
-	if (isValidPos(x - 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y + 2 });
+	//if (isValidPos(x - 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y + 2 });
 	if (isValidPos(x, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y - 2 });
 	if (isValidPos(x, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y + 2 });
-	if (isValidPos(x + 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y - 2 });
+	//if (isValidPos(x + 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y - 2 });
 	if (isValidPos(x + 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y });
-	if (isValidPos(x + 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y + 2 });
+	//if (isValidPos(x + 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y + 2 });
 
 	return validPos;
 }
 
 bool isValidPos(int x, int y, int rows, int cols)
 {
-	if (x < 0 || y < 0 || x > rows - 2 || y > cols - 2) return false;
+	if (x < 0 || y < 0 || x > rows - 1 || y > cols - 1) return false;
 	return true;
 }
 
@@ -216,10 +222,14 @@ void DepthFirstSearch(int x, int y)
 	int start{ rand() % int(listOfAdjacent.size()) };
 	for (int i = 0; i < listOfAdjacent.size(); i++)
 	{
-		if (g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x][listOfAdjacent[(i + start) % listOfAdjacent.size()].y] == int(MazeEntity::wall))
+		Point2i adjacentCell{ listOfAdjacent[(i + start) % listOfAdjacent.size()].x, listOfAdjacent[(i + start) % listOfAdjacent.size()].y };
+		if (g_MazeArray[adjacentCell.x][adjacentCell.y] == int(MazeEntity::wall))
 		{
-			g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x][listOfAdjacent[(i + start) % listOfAdjacent.size()].y] = 1;
-			g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x - 1][listOfAdjacent[(i + start) % listOfAdjacent.size()].y - 1] = 1;//this is likely the problem need to remove the wall between start position and current position
+			g_MazeArray[adjacentCell.x][adjacentCell.y] = 1;
+			Point2i deltaAdjacentOriginal{ adjacentCell.x - x, adjacentCell.y - y };
+			//g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x - 1][listOfAdjacent[(i + start) % listOfAdjacent.size()].y - 1] = 1;//this is likely the problem need to remove the wall between start position and current position
+			g_MazeArray[x + deltaAdjacentOriginal.x / 2][y + deltaAdjacentOriginal.y / 2] = 1;//this is likely the problem need to remove the wall between start position and current position
+			
 			DepthFirstSearch(listOfAdjacent[(i + start) % listOfAdjacent.size()].x, listOfAdjacent[(i + start) % listOfAdjacent.size()].y);
 		}
 	}
@@ -253,10 +263,14 @@ void UpdateTime()
 		g_Nrframes = 0;
 	}
 
-	if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
+	//need a function to load and unload them or something and reassign them when a new level is made. maybe inside a dynamic array?
+	if (g_Enemy1.isAlive)
 	{
-		UpdateEnemyPos(5, g_Enemy1);
-		g_TotalTimePassed = 0;
+		if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
+		{
+			UpdateEnemyPos(5, g_Enemy1);
+			g_TotalTimePassed = 0;
+		}
 	}
 }
 
@@ -340,6 +354,13 @@ void UpdatePlayerPos(const Entity& player)
 	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
 }
 
+void ClearEnemies()
+{
+	g_Enemy1.isAlive = false;
+	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::path);
+}
+
+
 void MoveEntity(const Direction& dir, Entity& entity)
 {
 	entity.currDir = dir;
@@ -355,6 +376,9 @@ void MoveEntity(const Direction& dir, Entity& entity)
 		else if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
 		{
 			std::cout << "You won!";
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.x += int(dir);
+			ClearEnemies();
 			GenerateNewMaze(); // need to delete player and enemies and reload them
 		}
 
@@ -372,6 +396,9 @@ void MoveEntity(const Direction& dir, Entity& entity)
 		else if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
 		{
 			std::cout << "You won!";
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.y += int(dir) / 2;
+			ClearEnemies();
 			GenerateNewMaze();
 		}
 	}

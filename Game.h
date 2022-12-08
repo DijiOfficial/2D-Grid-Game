@@ -18,8 +18,8 @@ float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more column
 int g_NrOfRows{ 25 }, g_NrOfCols{ 25 };
 int** g_MazeArray = new int* [g_NrOfRows];
 ////int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
-const float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
-const float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
+float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
+float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
 
 // Enemy UpdateTime
 int g_Nrframes{ 1 };
@@ -48,6 +48,7 @@ struct Entity {
 	int totalMovement;
 	bool isFollowing;
 	bool isPlayableCharacter; //not in use yet
+	bool isAlive{ true };
 };
 Entity g_Player1{ }, g_Enemy1{};
 
@@ -68,6 +69,7 @@ bool IsMazeCellPLayerOrPath(Entity& entity);
 bool IsEnemyPassedPLayer(Entity& entity);
 void SwitchEntityDirection(Entity& entity);
 bool IsDirectionCorrect(Entity& entity);
+
 void GenerateNewMaze();
 void Display2DArray();
 void DepthFirstSearch(int x, int y);
@@ -76,6 +78,7 @@ std::vector<Point2i> getAdjacentArray(int x, int y);
 bool IsGameLost();
 void DeleteTextures();
 void InitializeTextures();
+void ClearEnemies();
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											
