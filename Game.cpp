@@ -2,11 +2,13 @@
 #include "Game.h"
 #include <iostream>
 #include <chrono>
+#include <vector>
 
 //Basic game functions
 #pragma region gameFunctions											
 void Start()
 {
+	srand(int(time(nullptr)));
 	InitializeMaze();
 	g_TimeStart = std::chrono::system_clock::now();
 
@@ -30,6 +32,11 @@ void Update(float elapsedSec)
 void End()
 {
 	// free game resources here
+	for (int i = 0; i < g_NrOfRows; ++i)
+	{
+		delete[] g_MazeArray[i];
+	}
+	delete[] g_MazeArray;
 }
 #pragma endregion gameFunctions
 
@@ -109,6 +116,96 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
+void GenerateNewMaze()
+{
+	int cols{ rand() % 21 + 30 };
+	int rows{cols};
+	
+	//create new array
+	int** newMazeArray = new int* [rows];
+	for (int i = 0; i < rows; ++i)
+	{
+		newMazeArray[i] = new int[cols];
+	}
+	//delete old one
+	for (int i = 0; i < g_NrOfRows; ++i)
+	{
+		delete[] g_MazeArray[i];
+	}
+	delete[] g_MazeArray;
+	//rename new one
+	g_MazeArray = newMazeArray;
+	g_NrOfRows = rows;
+	g_NrOfCols = cols;
+
+	for (int i = 0; i < g_NrOfCols; i++)
+	{
+		for (int j = 0; j < g_NrOfRows; j++)
+		{
+			g_MazeArray[j][i] = int(MazeEntity::wall);
+		}
+	}
+
+	int startX{ rand() % g_NrOfRows };
+	int startY{ rand() % g_NrOfCols };
+	DepthFirstSearch(startX, startY);
+	g_MazeArray[startX][startY] = int(MazeEntity::player1);
+	Display2DArray();
+}
+
+std::vector<Point2i> getAdjacentArray(int x, int y)
+{
+	std::vector<Point2i> validPos{};
+
+	if (isValidPos(x - 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x - 2, y - 2});
+	if (isValidPos(x - 2, y    , g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x - 2, y    });
+	if (isValidPos(x - 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x - 2, y + 2});
+	if (isValidPos(x    , y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x    , y - 2});
+	if (isValidPos(x    , y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x    , y + 2});
+	if (isValidPos(x + 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x + 2, y - 2});
+	if (isValidPos(x + 2, y    , g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x + 2, y    });
+	if (isValidPos(x + 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{x + 2, y + 2});
+
+	return validPos;
+}
+
+bool isValidPos(int x, int y, int rows, int cols)
+{
+	if (x < 0 || y < 0 || x > rows - 2 || y > cols - 2) return false;
+	return true;
+}
+
+void DepthFirstSearch(int x, int y)
+{
+	g_MazeArray[x][y] = int(MazeEntity::path);
+	std::vector<Point2i> listOfAdjacent = getAdjacentArray(x, y);
+	//intVector.size()
+	//array[(i + start) % arraysize]
+	int start{ rand() % int(listOfAdjacent.size()) };
+	for (int i = 0; i < listOfAdjacent.size(); i++)
+	{
+		if (g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x][listOfAdjacent[(i + start) % listOfAdjacent.size()].y] == int(MazeEntity::wall))
+		{
+			g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x][listOfAdjacent[(i + start) % listOfAdjacent.size()].y] = 1;
+			g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x - 1][listOfAdjacent[(i + start) % listOfAdjacent.size()].y - 1] = 1;//this is likely the problem need to remove the wall between start position and current position
+			DepthFirstSearch(listOfAdjacent[(i + start) % listOfAdjacent.size()].x, listOfAdjacent[(i + start) % listOfAdjacent.size()].y);
+		}
+	}
+}
+
+void Display2DArray()
+{
+	std::cout << "\n Two Dimensional Array is : \n";
+	for (int i = 0; i < g_NrOfRows; i++)
+	{
+		for (int j = 0; j < g_NrOfCols; j++)
+		{
+			std::cout << " " << g_MazeArray[i][j] << " ";
+		}
+		std::cout << "\n";
+	}
+}
+
 void UpdateTime()
 {
 	++g_Nrframes;
@@ -129,6 +226,11 @@ void UpdateTime()
 
 void InitializeMaze()
 {
+
+	for (int i = 0; i < g_NrOfRows; ++i)
+	{
+		g_MazeArray[i] = new int[g_NrOfCols];
+	}
 	for (int i = 0; i < g_NrOfCols; i++)
 	{
 		for (int j = 0; j < g_NrOfRows; j++)
@@ -149,10 +251,6 @@ void InitializeMaze()
 	g_MazeArray[25][20] = int(MazeEntity::wall);
 	g_MazeArray[20][20] = int(MazeEntity::wall);
 
-	//for (size_t i = 1; i < 10; i++)
-	//{
-	//	g_MazeArray[i][2] = int(MazeEntity::path);
-	//}
 	g_MazeArray[9][1] = int(MazeEntity::endPoint);
 	g_Enemy1.x = 18;
 	g_Enemy1.y = 18;
@@ -196,18 +294,23 @@ void MovePlayer(const Direction& dir)
 			g_Player1.x += int(dir);
 		}
 		else if (g_MazeArray[g_Player1.x + int(dir)][g_Player1.y] == int(MazeEntity::endPoint))
+		{
 			std::cout << "You won!";
-
+			GenerateNewMaze(); //need to delete player and ennemies and reload them
+		}
 	}
 	else if (dir == Direction::up || dir == Direction::down)
 	{
-		if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir)/2] == int(MazeEntity::path))
+		if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir) / 2] == int(MazeEntity::path))
 		{
 			g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::path);
-			g_Player1.y += int(dir)/2 ;
+			g_Player1.y += int(dir) / 2;
 		}
-		else if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir)/2 ] == int(MazeEntity::endPoint))
+		else if (g_MazeArray[g_Player1.x][g_Player1.y + int(dir) / 2] == int(MazeEntity::endPoint))
+		{
 			std::cout << "You won!";
+			GenerateNewMaze();
+		}
 	}
 }
 
@@ -257,7 +360,7 @@ bool IsMazeCellPLayerOrPath(Player& entity)
 		default:
 			break;
 	}
-	std::cout << "Entity at pos + 1y: " << g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] << ", first:" << firstCondition << ",second: " << secondCondition << std::endl;
+
 	return firstCondition or secondCondition;
 }
 
@@ -289,20 +392,27 @@ void UpdateEnemyPos(const int movement, Player& entity)
 	else if (sqrt(pow(g_Player1.x - entity.x, 2) + pow(g_Player1.y - entity.y, 2)) >= 20) entity.isFollowing = false;
 	if (entity.isFollowing)
 	{
-		if (!IsMazeCellPLayerOrPath(entity) or IsEnemyPassedPLayer(entity)) SwitchEntityDirection(entity);
-		else if (!IsMazeCellPLayerOrPath(entity))
+		if (IsEnemyPassedPLayer(entity)) SwitchEntityDirection(entity);
+		
+		if (!IsMazeCellPLayerOrPath(entity))
 		{
+			Direction originalDir{ entity.currDir };
+			std::cout << "invalid poopy direction" << std::endl;
 			switch (entity.currDir)
 				{
-					case Direction::up:
 					case Direction::down:
-						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::right, entity);
-						else MoveEntity(Direction::left, entity);
+					case Direction::up:
+						entity.currDir = Direction::left;
+						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::left, entity);
+						else MoveEntity(Direction::right, entity);
+						entity.currDir = originalDir;
 						break;
 					case Direction::left:
 					case Direction::right:
-						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::up, entity);
-						else MoveEntity(Direction::down, entity);
+						entity.currDir = Direction::down;
+						if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::down, entity);
+						else MoveEntity(Direction::up, entity);
+						entity.currDir = originalDir;
 						break;
 					default:
 						break;

@@ -1,23 +1,27 @@
 #pragma once
 #include <chrono>
+#include <vector>
 using namespace utils;
 #pragma region gameInformation
 // Set your name and group in the title here
 std::string g_WindowTitle{ "Project name - Name, firstname - 1DAExx" };
 
 // Change the window dimensions here
-float g_WindowWidth{ 800 };
-float g_WindowHeight{ 800 };
+float g_WindowHeight{ 720 };
+float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more columns?
 #pragma endregion gameInformation
 
-
+	
 
 #pragma region ownDeclarations
 // Declare your own global variables here
-const int g_NrOfRows{ 40 }, g_NrOfCols{ 40 };
-int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
+int g_NrOfRows{ 40 }, g_NrOfCols{ 40 };
+int** g_MazeArray = new int* [g_NrOfRows];
+//int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
+
 const float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
 const float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
+
 int g_Nrframes{ 1 };
 const int g_RefreshFrame{ 100 };
 const float g_EnnemySpeed{ 0.5f };
@@ -63,6 +67,12 @@ bool IsMazeCellPLayerOrPath(Player& entity);
 bool IsEnemyPassedPLayer(Player& entity);
 void SwitchEntityDirection(Player& entity);
 bool IsDirectionCorrect(Player& entity);
+
+void GenerateNewMaze();
+void Display2DArray();
+void DepthFirstSearch(int x, int y);
+bool isValidPos(int x, int y, int rows, int cols);
+std::vector<Point2i> getAdjacentArray(int x, int y);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											
