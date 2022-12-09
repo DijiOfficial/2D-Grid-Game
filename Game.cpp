@@ -10,7 +10,7 @@ void Start()
 {
 	InitializeTextures();
 
-	TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf",48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+	TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf", 48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
 	const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 	InitializeMaze();
 	InitializeGameResources(playerStartPosX, playerStartPosY);
@@ -30,7 +30,7 @@ void Draw()
 	if (g_IsGameStarted)
 	{
 		if (IsGameLost())
-		{ 
+		{
 			DrawTexture(g_LostGamePage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
 			DrawTexture(g_RetryButton, g_ButtonRect);
 		}
@@ -47,26 +47,20 @@ void Draw()
 
 	}
 
-	for (int i = 0; i < g_BeamArray.size(); i++)
-	{
-		const float xRadius{ 10.f }, yRadius{ 5.f };
-		FillEllipse(g_BeamArray[i].x, g_BeamArray[i].y, xRadius, yRadius);
-	}
+	if (g_IsGameStarted && !IsGameLost())
+		DrawBeams();
 
 }
 
 void Update(float elapsedSec)
 {
 	UpdatePlayerPos(g_Player1);
-	//UpdateEnemyPos(5);
 	UpdateTime();
-	/*for (auto& beam : g_BeamArray) 
+
+	if (g_IsGameStarted && !IsGameLost())
 	{
-		beam.x += 0.1f;
-	}*/
-	for (int i = 0; i < g_BeamArray.size(); i++)
-	{
-		g_BeamArray[i].x += 0.1f;
+		UpdateBeam();
+		DeleteBeam();
 	}
 
 }
@@ -79,10 +73,10 @@ void End()
 	}
 	delete[] g_MazeArray;
 
-	for (int i = 0; i < g_BeamArray.size(); i++) 
-		{
-			g_BeamArray.erase(g_BeamArray.begin() + i);
-		}
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		g_BeamArray.erase(g_BeamArray.begin() + i);
+	}
 
 	DeleteTextures();
 }
@@ -106,28 +100,16 @@ void OnKeyDownEvent(SDL_Keycode key)
 	case SDLK_DOWN:
 		MoveEntity(Direction::down, g_Player1);
 		break;
-	case SDLK_SPACE:	// move this to keyupevent
-		std::cout << g_Player1.x << " " << g_Player1.y << "\n";
-		g_BeamArray.emplace_back(g_Player1.x + g_BlockSizeX, g_Player1.y + g_BlockSizeY / 2.f);
-		break;
 	}
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
-	//switch (key)
-	//{
-	//case SDLK_LEFT:
-	//	//std::cout << "Left arrow key released\n";
-	//	break;
-	//case SDLK_RIGHT:
-	//	//std::cout << "Right arrow key released\n";
-	//	break;
-	//case SDLK_1:
-	//case SDLK_KP_1:
-	//	//std::cout << "Key 1 released\n";
-	//	break;
-	//}
+	if (key == SDLK_SPACE)
+	{
+		const float beamPosX{ (g_Player1.x + 0.5f) * g_BlockSizeX }, beamPosY{ g_Player1.y * g_BlockSizeY };
+		g_BeamArray.emplace_back(beamPosX, beamPosY);
+	}
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -208,7 +190,7 @@ void GenerateNewMaze()
 			g_MazeArray[j][i] = int(MazeEntity::wall);
 		}
 	}
-	
+
 	DepthFirstSearch(g_Player1.x, g_Player1.y);
 	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
 
@@ -219,15 +201,15 @@ void GenerateNewMaze()
 	{
 		if (g_Player1.x >= g_NrOfRows / 2) endPointX = { rand() % (g_NrOfRows / 2) + 1 };
 		else endPointX = { g_NrOfRows / 2 + rand() % (g_NrOfRows / 2 - 1) + 1 };
-		
+
 		if (g_Player1.y >= g_NrOfCols / 2) endPointY = { rand() % (g_NrOfCols / 2) + 1 };
-		else endPointY = { g_NrOfCols / 2 + rand() % ( g_NrOfCols / 2 - 1) + 1 };
-		
+		else endPointY = { g_NrOfCols / 2 + rand() % (g_NrOfCols / 2 - 1) + 1 };
+
 		if (GetDistance(float(g_Player1.x), float(g_Player1.y), float(endPointY), float(endPointX)) > 5)
 		{
 			if (endPointY % 2 == 1 and endPointX % 2 == 1) break;
 		}
-		
+
 	}
 
 	//generate the enemy
@@ -267,7 +249,7 @@ void GenerateNewMaze()
 std::vector<Point2i> getAdjacentArray(int x, int y)
 {
 	std::vector<Point2i> validPos{};
-	
+
 	if (isValidPos(x - 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y });
 	if (isValidPos(x, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y - 2 });
 	if (isValidPos(x, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y + 2 });
@@ -298,7 +280,7 @@ void DepthFirstSearch(int x, int y)
 			Point2i deltaAdjacentOriginal{ adjacentCell.x - x, adjacentCell.y - y };
 			//g_MazeArray[listOfAdjacent[(i + start) % listOfAdjacent.size()].x - 1][listOfAdjacent[(i + start) % listOfAdjacent.size()].y - 1] = 1;//this is likely the problem need to remove the wall between start position and current position
 			g_MazeArray[x + deltaAdjacentOriginal.x / 2][y + deltaAdjacentOriginal.y / 2] = 1;//this is likely the problem need to remove the wall between start position and current position
-			
+
 			DepthFirstSearch(listOfAdjacent[(i + start) % listOfAdjacent.size()].x, listOfAdjacent[(i + start) % listOfAdjacent.size()].y);
 		}
 	}
@@ -423,6 +405,15 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 	g_MazeArray[entity.x][entity.y] = int(MazeEntity::enemy);
 }
 
+void UpdateBeam()
+{
+	const float beamSpeed{ 0.2f };
+	for (auto& beam : g_BeamArray)
+	{
+		beam.x += beamSpeed;
+	}
+}
+
 // Initialize functions
 void InitializeMaze()
 {
@@ -481,6 +472,8 @@ void InitializeTextures()
 	TextureFromFile("resources/wall.jpg", g_WallTexture);
 	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
 	TextureFromFile("resources/player-texture.jpg", g_Player1.texture);
+
+	TextureFromFile("resources/beam-texture.png", g_BeamTexture);
 }
 
 void DeleteTextures()
@@ -495,6 +488,7 @@ void DeleteTextures()
 	DeleteTexture(g_Enemy1.texture);
 	DeleteTexture(g_LostGamePage);
 	DeleteTexture(g_LevelTexture);
+	DeleteTexture(g_BeamTexture);
 }
 
 // Draw functions
@@ -525,6 +519,14 @@ void DrawMaze()
 			SetColor(1.f, 1.f, 1.f);
 			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
 		}
+	}
+}
+
+void DrawBeams()
+{
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		DrawTexture(g_BeamTexture, Rectf{ g_BeamArray[i].x, g_BeamArray[i].y, g_BlockSizeX,g_BlockSizeY });
 	}
 }
 
@@ -629,11 +631,28 @@ bool IsGameLost()
 
 	if (g_Player1.y == g_Enemy1.y)
 		return (g_Player1.x == g_Enemy1.x + 1 || g_Player1.x == g_Enemy1.x - 1);
-	
+
 	return false;
 }
 
 // Beams functions
+bool CheckBeamCollision(const Beam& beam)
+{
 
+	const Point2i beamPosInArr{ int(beam.x / g_BlockSizeX),int(beam.y / g_BlockSizeY) };
+
+	if (g_MazeArray[beamPosInArr.x + 1][beamPosInArr.y] == int(MazeEntity::wall)) return true;
+
+	return false;
+}
+
+void DeleteBeam()
+{
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		if (CheckBeamCollision(g_BeamArray[i]))
+			g_BeamArray.erase(g_BeamArray.begin() + i);
+	}
+}
 
 #pragma endregion ownDefinitions

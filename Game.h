@@ -61,7 +61,7 @@ struct Beam {
 }; 
 std::vector<Beam> g_BeamArray{};
 
-Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{};
+Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture{};
 Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false };
@@ -71,16 +71,18 @@ int g_LevelNr{ 1 };
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
 void DrawMaze();
+void DrawBeams();
 void UpdatePlayerPos(const Entity& player);
 void UpdateEnemyPos(const int movement, Entity& entity);
 void UpdateLevel(int level);
 void UpdateTime();
+void UpdateBeam();
 void MoveEntity(const Direction& dir, Entity& entity);
 bool IsMazeCellPLayerOrPath(Entity& entity);
 bool IsEnemyPassedPLayer(Entity& entity);
 void SwitchEntityDirection(Entity& entity);
 bool IsDirectionCorrect(Entity& entity);
-
+void DeleteBeam();
 void GenerateNewMaze();
 void Display2DArray();
 void DepthFirstSearch(int x, int y);
