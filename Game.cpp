@@ -10,9 +10,11 @@ void Start()
 {
 	InitializeTextures();
 
-	const int playerStartPosX{ 1 }, playerStartPosY{ 1 }, enemyStartPosX{ 18 }, enemyStartPosY{ 18 };
+	TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf",48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+	const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 	InitializeMaze();
-	InitializeGameResources(playerStartPosX, playerStartPosY, enemyStartPosX, enemyStartPosY);
+	InitializeGameResources(playerStartPosX, playerStartPosY);
+	GenerateNewMaze();
 
 	const float scale{ 0.5f };
 	g_ButtonRect.left = g_WindowWidth / 2 - g_StartButton.width / 2 * scale;
@@ -28,12 +30,15 @@ void Draw()
 	if (g_IsGameStarted)
 	{
 		if (IsGameLost())
-		{
+		{ 
 			DrawTexture(g_LostGamePage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
 			DrawTexture(g_RetryButton, g_ButtonRect);
 		}
 		else
+		{
 			DrawMaze();
+			DrawTexture(g_LevelTexture, Point2f{ 20.f, g_WindowHeight - 80.f });
+		}
 	}
 	else
 	{
@@ -41,7 +46,12 @@ void Draw()
 		DrawTexture(g_StartButton, g_ButtonRect);
 
 	}
-	// Put your own draw statements here
+
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		const float xRadius{ 10.f }, yRadius{ 5.f };
+		FillEllipse(g_BeamArray[i].x, g_BeamArray[i].y, xRadius, yRadius);
+	}
 
 }
 
@@ -50,17 +60,29 @@ void Update(float elapsedSec)
 	UpdatePlayerPos(g_Player1);
 	//UpdateEnemyPos(5);
 	UpdateTime();
+	/*for (auto& beam : g_BeamArray) 
+	{
+		beam.x += 0.1f;
+	}*/
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		g_BeamArray[i].x += 0.1f;
+	}
 
 }
 
 void End()
 {
-	// free game resources here
 	for (int i = 0; i < g_NrOfRows; ++i)
 	{
 		delete[] g_MazeArray[i];
 	}
 	delete[] g_MazeArray;
+
+	for (int i = 0; i < g_BeamArray.size(); i++) 
+		{
+			g_BeamArray.erase(g_BeamArray.begin() + i);
+		}
 
 	DeleteTextures();
 }
@@ -73,20 +95,20 @@ void OnKeyDownEvent(SDL_Keycode key)
 	switch (key)
 	{
 	case SDLK_LEFT:
-
 		MoveEntity(Direction::left, g_Player1);
 		break;
 	case SDLK_RIGHT:
-
 		MoveEntity(Direction::right, g_Player1);
 		break;
 	case SDLK_UP:
-
 		MoveEntity(Direction::up, g_Player1);
 		break;
 	case SDLK_DOWN:
-
 		MoveEntity(Direction::down, g_Player1);
+		break;
+	case SDLK_SPACE:	// move this to keyupevent
+		std::cout << g_Player1.x << " " << g_Player1.y << "\n";
+		g_BeamArray.emplace_back(g_Player1.x + g_BlockSizeX, g_Player1.y + g_BlockSizeY / 2.f);
 		break;
 	}
 }
@@ -135,9 +157,11 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 	{
 		if (IsPointInRect(mousePos, g_ButtonRect))
 		{
-			const int playerStartPosX{ 1 }, playerStartPosY{ 1 }, enemyStartPosX{ 18 }, enemyStartPosY{ 18 };
-			InitializeMaze();
-			InitializeGameResources(playerStartPosX, playerStartPosY, enemyStartPosX, enemyStartPosY);
+			g_LevelNr = 1;
+			UpdateLevel(g_LevelNr);
+			//const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
+			//InitializeGameResources(playerStartPosX, playerStartPosY);
+			GenerateNewMaze();
 		}
 	}
 	break;
@@ -147,7 +171,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 #pragma endregion inputHandling
 
 #pragma region ownDefinitions
-// Define your own functions here
+// Maze generation
 void GenerateNewMaze()
 {
 	//generating new maze size
@@ -243,7 +267,7 @@ void GenerateNewMaze()
 std::vector<Point2i> getAdjacentArray(int x, int y)
 {
 	std::vector<Point2i> validPos{};
-
+	
 	if (isValidPos(x - 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y });
 	if (isValidPos(x, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y - 2 });
 	if (isValidPos(x, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y + 2 });
@@ -293,6 +317,13 @@ void Display2DArray()
 	}
 }
 
+void ClearEnemies()
+{
+	g_Enemy1.isAlive = false;
+	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::path);
+}
+
+// Update functions
 void UpdateTime()
 {
 	const int refreshFrame{ 100 };
@@ -319,179 +350,14 @@ void UpdateTime()
 	}
 }
 
-void InitializeMaze()
-{
-
-	for (int i = 0; i < g_NrOfRows; ++i)
-	{
-		g_MazeArray[i] = new int[g_NrOfCols];
-	}
-	for (int i = 0; i < g_NrOfCols; i++)
-	{
-		for (int j = 0; j < g_NrOfRows; j++)
-		{
-			g_MazeArray[j][i] = int(MazeEntity::path);
-		}
-	}
-	for (size_t j = 0; j < 5; j++)
-	{
-		g_MazeArray[j + 10][10] = int(MazeEntity::wall);
-		g_MazeArray[10][j + 10] = int(MazeEntity::wall);
-		g_MazeArray[15][j + 10] = int(MazeEntity::wall);
-		g_MazeArray[j + 10][15] = int(MazeEntity::wall);
-	}
-
-	/*g_MazeArray[25][25] = int(MazeEntity::wall);
-	g_MazeArray[20][25] = int(MazeEntity::wall);
-	g_MazeArray[25][20] = int(MazeEntity::wall);
-	g_MazeArray[20][20] = int(MazeEntity::wall);*/
-
-	g_MazeArray[9][1] = int(MazeEntity::endPoint);
-
-}
-
-void InitializeGameResources(int playerStartPosX, int playerStartPosY, int enemyStartPosX, int enemyStartPosY)
-{
-	g_Enemy1.x = enemyStartPosX;
-	g_Enemy1.y = enemyStartPosY;
-	g_Player1.x = playerStartPosX;
-	g_Player1.y = playerStartPosY;
-	g_Enemy1.currDir = Direction::right;
-
-	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy);
-	//g_TimeStart = std::chrono::system_clock::now();
-	g_Player1.isPlayableCharacter = true;
-	g_Enemy1.isPlayableCharacter = false;
-}
-
-void DrawMaze()
-{
-
-	for (size_t i = 0; i < g_NrOfRows; i++)
-	{
-		for (size_t j = 0; j < g_NrOfCols; j++)
-		{
-			Rectf cellRect{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
-			if (g_MazeArray[i][j] == int(MazeEntity::wall))
-				DrawTexture(g_WallTexture, cellRect);
-			//SetColor(0.5f, 0.5f, 0.5f);
-			else if (g_MazeArray[i][j] == int(MazeEntity::path))
-				DrawTexture(g_PathTexture, cellRect);
-			//SetColor(0.5f, 1.f, 0.5f);
-			else if (g_MazeArray[i][j] == int(MazeEntity::endPoint))
-				//SetColor(1.f, 1.f, 0.f);
-				DrawTexture(g_EndPointTexture, cellRect);
-			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
-				DrawTexture(g_Player1.texture, cellRect);
-			//SetColor(1.f, 0.f, 0.f);
-			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
-				DrawTexture(g_Enemy1.texture, cellRect);
-			//SetColor(1.f, 0.f, 1.f);
-		//FillRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
-			SetColor(1.f, 1.f, 1.f);
-			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
-		}
-	}
-}
-
 void UpdatePlayerPos(const Entity& player)
 {
 	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
 }
 
-void ClearEnemies()
+void UpdateLevel(int level)
 {
-	g_Enemy1.isAlive = false;
-	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::path);
-}
-
-
-void MoveEntity(const Direction& dir, Entity& entity)
-{
-	entity.currDir = dir;
-	if (dir == Direction::left || dir == Direction::right)
-	{
-		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
-		//if (g_MazeArray[entity.x + int(dir)][entity.y] != int(MazeEntity::endPoint))
-		{
-			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
-			entity.x += int(dir);
-			if (entity.isPlayableCharacter == false)
-				entity.totalMovement += int(dir);
-		}
-		else if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
-		{
-			std::cout << "You won!";
-			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
-			entity.x += int(dir);
-			ClearEnemies();
-			GenerateNewMaze(); // need to delete player and enemies and reload them
-		}
-	}
-	else if (dir == Direction::up || dir == Direction::down)
-	{
-		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path))
-		//if (g_MazeArray[entity.x][entity.y + int(dir) / 2] != int(MazeEntity::endPoint))
-		{
-			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
-			entity.y += int(dir) / 2;
-			if (entity.isPlayableCharacter == false)
-				entity.totalMovement += int(dir) / 2;
-
-		}
-		else if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
-		{
-			std::cout << "You won!";
-			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
-			entity.y += int(dir) / 2;
-			ClearEnemies();
-			GenerateNewMaze();
-		}
-	}
-}
-
-bool IsMazeCellPLayerOrPath(Entity& entity)
-{
-	bool firstCondition{}, secondCondition{};
-	switch (entity.currDir)
-	{
-	case Direction::up:
-	case Direction::down:
-		firstCondition = g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] == int(MazeEntity::path);
-		secondCondition = g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] == int(MazeEntity::player1);
-		break;
-	case Direction::left:
-	case Direction::right:
-		firstCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::path);
-		secondCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::player1);
-		break;
-	default:
-		break;
-	}
-
-	return firstCondition or secondCondition;
-}
-
-bool IsEnemyPassedPLayer(Entity& entity)
-{
-	return g_Player1.x == entity.x or g_Player1.y == entity.y;
-}
-
-void SwitchEntityDirection(Entity& entity)
-{
-	if (g_Player1.x > entity.x) entity.currDir = Direction::right;
-	else if (g_Player1.x < entity.x) entity.currDir = Direction::left;
-	else if (g_Player1.y > entity.y) entity.currDir = Direction::up;
-	else if (g_Player1.y < entity.y) entity.currDir = Direction::down;
-}
-
-bool IsDirectionCorrect(Entity& entity)
-{
-	if (g_Player1.x > entity.x and entity.currDir == Direction::right) return true;
-	else if (g_Player1.x < entity.x and entity.currDir == Direction::left) return true;
-	else if (g_Player1.y > entity.y and entity.currDir == Direction::up) return true;
-	else if (g_Player1.y < entity.y and entity.currDir == Direction::down) return true;
-	return false;
+	TextureFromString(std::to_string(level), "resources/goudysto.ttf", 48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
 }
 
 void UpdateEnemyPos(const int movement, Entity& entity)
@@ -557,28 +423,50 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 	g_MazeArray[entity.x][entity.y] = int(MazeEntity::enemy);
 }
 
-bool IsGameLost()
+// Initialize functions
+void InitializeMaze()
 {
-	if (g_Player1.x == g_Enemy1.x)
-		return (g_Player1.y == g_Enemy1.y + 1 || g_Player1.y == g_Enemy1.y - 1);
 
-	if (g_Player1.y == g_Enemy1.y)
-		return (g_Player1.x == g_Enemy1.x + 1 || g_Player1.x == g_Enemy1.x - 1);
+	for (int i = 0; i < g_NrOfRows; ++i)
+	{
+		g_MazeArray[i] = new int[g_NrOfCols];
+	}
+	for (int i = 0; i < g_NrOfCols; i++)
+	{
+		for (int j = 0; j < g_NrOfRows; j++)
+		{
+			g_MazeArray[j][i] = int(MazeEntity::path);
+		}
+	}
+	for (size_t j = 0; j < 5; j++)
+	{
+		g_MazeArray[j + 10][10] = int(MazeEntity::wall);
+		g_MazeArray[10][j + 10] = int(MazeEntity::wall);
+		g_MazeArray[15][j + 10] = int(MazeEntity::wall);
+		g_MazeArray[j + 10][15] = int(MazeEntity::wall);
+	}
 
-	return false;
+	/*g_MazeArray[25][25] = int(MazeEntity::wall);
+	g_MazeArray[20][25] = int(MazeEntity::wall);
+	g_MazeArray[25][20] = int(MazeEntity::wall);
+	g_MazeArray[20][20] = int(MazeEntity::wall);*/
+
+	g_MazeArray[9][1] = int(MazeEntity::endPoint);
+
 }
 
-void DeleteTextures()
+void InitializeGameResources(int playerStartPosX, int playerStartPosY)
 {
-	DeleteTexture(g_StartButton);
-	DeleteTexture(g_StartPage);
-	DeleteTexture(g_RetryButton);
-	DeleteTexture(g_WallTexture);
-	DeleteTexture(g_PathTexture);
-	DeleteTexture(g_EndPointTexture);
-	DeleteTexture(g_Player1.texture);
-	DeleteTexture(g_Enemy1.texture);
-	DeleteTexture(g_LostGamePage);
+	//g_Enemy1.x = enemyStartPosX;
+	//g_Enemy1.y = enemyStartPosY;
+	g_Player1.x = playerStartPosX;
+	g_Player1.y = playerStartPosY;
+	//g_Enemy1.currDir = Direction::right;
+
+	//g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy);
+	g_TimeStart = std::chrono::system_clock::now();
+	g_Player1.isPlayableCharacter = true;
+	g_Enemy1.isPlayableCharacter = false;
 }
 
 void InitializeTextures()
@@ -594,4 +482,158 @@ void InitializeTextures()
 	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
 	TextureFromFile("resources/player-texture.jpg", g_Player1.texture);
 }
+
+void DeleteTextures()
+{
+	DeleteTexture(g_StartButton);
+	DeleteTexture(g_StartPage);
+	DeleteTexture(g_RetryButton);
+	DeleteTexture(g_WallTexture);
+	DeleteTexture(g_PathTexture);
+	DeleteTexture(g_EndPointTexture);
+	DeleteTexture(g_Player1.texture);
+	DeleteTexture(g_Enemy1.texture);
+	DeleteTexture(g_LostGamePage);
+	DeleteTexture(g_LevelTexture);
+}
+
+// Draw functions
+void DrawMaze()
+{
+
+	for (size_t i = 0; i < g_NrOfRows; i++)
+	{
+		for (size_t j = 0; j < g_NrOfCols; j++)
+		{
+			Rectf cellRect{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
+			if (g_MazeArray[i][j] == int(MazeEntity::wall))
+				DrawTexture(g_WallTexture, cellRect);
+			//SetColor(0.5f, 0.5f, 0.5f);
+			else if (g_MazeArray[i][j] == int(MazeEntity::path))
+				DrawTexture(g_PathTexture, cellRect);
+			//SetColor(0.5f, 1.f, 0.5f);
+			else if (g_MazeArray[i][j] == int(MazeEntity::endPoint))
+				//SetColor(1.f, 1.f, 0.f);
+				DrawTexture(g_EndPointTexture, cellRect);
+			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
+				DrawTexture(g_Player1.texture, cellRect);
+			//SetColor(1.f, 0.f, 0.f);
+			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
+				DrawTexture(g_Enemy1.texture, cellRect);
+			//SetColor(1.f, 0.f, 1.f);
+		//FillRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
+			SetColor(1.f, 1.f, 1.f);
+			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
+		}
+	}
+}
+
+// Move entity functions
+void MoveEntity(const Direction& dir, Entity& entity)
+{
+	entity.currDir = dir;
+	if (dir == Direction::left || dir == Direction::right)
+	{
+		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
+			//if (g_MazeArray[entity.x + int(dir)][entity.y] != int(MazeEntity::endPoint))
+		{
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.x += int(dir);
+			if (entity.isPlayableCharacter == false)
+				entity.totalMovement += int(dir);
+		}
+		else if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
+		{
+			//std::cout << "You won!";
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.x += int(dir);
+			ClearEnemies();
+			g_LevelNr++;
+			UpdateLevel(g_LevelNr);
+			GenerateNewMaze(); // need to delete player and enemies and reload them
+		}
+	}
+	else if (dir == Direction::up || dir == Direction::down)
+	{
+		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path))
+			//if (g_MazeArray[entity.x][entity.y + int(dir) / 2] != int(MazeEntity::endPoint))
+		{
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.y += int(dir) / 2;
+			if (entity.isPlayableCharacter == false)
+				entity.totalMovement += int(dir) / 2;
+
+		}
+		else if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
+		{
+			//std::cout << "You won!";
+			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
+			entity.y += int(dir) / 2;
+			ClearEnemies();
+			g_LevelNr++;
+			UpdateLevel(g_LevelNr);
+			GenerateNewMaze();
+		}
+	}
+}
+
+bool IsMazeCellPLayerOrPath(Entity& entity)
+{
+	bool firstCondition{}, secondCondition{};
+	switch (entity.currDir)
+	{
+	case Direction::up:
+	case Direction::down:
+		firstCondition = g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] == int(MazeEntity::path);
+		secondCondition = g_MazeArray[entity.x][entity.y + int(entity.currDir) / 2] == int(MazeEntity::player1);
+		break;
+	case Direction::left:
+	case Direction::right:
+		firstCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::path);
+		secondCondition = g_MazeArray[entity.x + int(entity.currDir)][entity.y] == int(MazeEntity::player1);
+		break;
+	default:
+		break;
+	}
+
+	return firstCondition or secondCondition;
+}
+
+bool IsEnemyPassedPLayer(Entity& entity)
+{
+	return g_Player1.x == entity.x or g_Player1.y == entity.y;
+}
+
+void SwitchEntityDirection(Entity& entity)
+{
+	if (g_Player1.x > entity.x) entity.currDir = Direction::right;
+	else if (g_Player1.x < entity.x) entity.currDir = Direction::left;
+	else if (g_Player1.y > entity.y) entity.currDir = Direction::up;
+	else if (g_Player1.y < entity.y) entity.currDir = Direction::down;
+}
+
+bool IsDirectionCorrect(Entity& entity)
+{
+	if (g_Player1.x > entity.x and entity.currDir == Direction::right) return true;
+	else if (g_Player1.x < entity.x and entity.currDir == Direction::left) return true;
+	else if (g_Player1.y > entity.y and entity.currDir == Direction::up) return true;
+	else if (g_Player1.y < entity.y and entity.currDir == Direction::down) return true;
+	return false;
+}
+
+// Lost game functions
+bool IsGameLost()
+{
+	if (g_Player1.x == g_Enemy1.x)
+		return (g_Player1.y == g_Enemy1.y + 1 || g_Player1.y == g_Enemy1.y - 1);
+
+	if (g_Player1.y == g_Enemy1.y)
+		return (g_Player1.x == g_Enemy1.x + 1 || g_Player1.x == g_Enemy1.x - 1);
+	
+	return false;
+}
+
+// Beams functions
+
+
 #pragma endregion ownDefinitions

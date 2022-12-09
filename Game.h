@@ -17,6 +17,8 @@ float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more column
 // Maze variables
 int g_NrOfRows{ 26 }, g_NrOfCols{ 26 };
 int** g_MazeArray = new int* [g_NrOfRows];
+const int g_MaxNrOfBeams{ 50 };
+
 ////int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
 float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };
 float g_BlockSizeY{ g_WindowHeight/g_NrOfCols };
@@ -47,22 +49,31 @@ struct Entity {
 	Direction currDir;
 	int totalMovement;
 	bool isFollowing;
-	bool isPlayableCharacter; //not in use yet
+	bool isPlayableCharacter;
 	bool isAlive{ true };
 };
 Entity g_Player1{ }, g_Enemy1{};
+struct Beam {
+	float x;
+	float y;
+
+	Beam(float x_pos, float y_pos) : x(x_pos), y(y_pos) {}
+}; 
+std::vector<Beam> g_BeamArray{};
 
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{};
-Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{};
+Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false };
+int g_LevelNr{ 1 };
 
 // Declare your own functions here
-void InitializeGameResources(int playerStartPosX, int playerStartPosY, int enemyStartPosX, int enemyStartPosY);
+void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
 void DrawMaze();
 void UpdatePlayerPos(const Entity& player);
 void UpdateEnemyPos(const int movement, Entity& entity);
+void UpdateLevel(int level);
 void UpdateTime();
 void MoveEntity(const Direction& dir, Entity& entity);
 bool IsMazeCellPLayerOrPath(Entity& entity);
