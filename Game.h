@@ -15,7 +15,7 @@ float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more column
 
 #pragma region ownDeclarations
 // Maze variables
-int g_NrOfRows{ 25 }, g_NrOfCols{ 25 };
+int g_NrOfRows{ 26 }, g_NrOfCols{ 26 };
 int** g_MazeArray = new int* [g_NrOfRows];
 ////int g_MazeArray[g_NrOfRows][g_NrOfCols]{};
 float g_BlockSizeX{ g_WindowWidth/ g_NrOfRows };

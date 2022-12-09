@@ -150,7 +150,8 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // Define your own functions here
 void GenerateNewMaze()
 {
-	int cols{ rand() % 21 + 30 };
+	//generating new maze size
+	int cols{ (rand() % 6) * 2 + 25 };
 	int rows{ cols };
 	g_BlockSizeX = { g_WindowWidth / rows };
 	g_BlockSizeY = { g_WindowHeight / cols };
@@ -175,6 +176,7 @@ void GenerateNewMaze()
 	g_NrOfRows = rows;
 	g_NrOfCols = cols;
 
+	//fill it
 	for (int i = 0; i < g_NrOfCols; i++)
 	{
 		for (int j = 0; j < g_NrOfRows; j++)
@@ -182,27 +184,70 @@ void GenerateNewMaze()
 			g_MazeArray[j][i] = int(MazeEntity::wall);
 		}
 	}
-
-	//int startX{ rand() % g_NrOfRows };
-	//int startY{ rand() % g_NrOfCols };
-
+	
 	DepthFirstSearch(g_Player1.x, g_Player1.y);
 	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
-	//Display2DArray();
+
+	//generating the endPoint
+	int endPointY{}, endPointX{};
+	int enemyX{}, enemyY{};
+	while (true)
+	{
+		if (g_Player1.x >= g_NrOfRows / 2) endPointX = { rand() % (g_NrOfRows / 2) + 1 };
+		else endPointX = { g_NrOfRows / 2 + rand() % (g_NrOfRows / 2 - 1) + 1 };
+		
+		if (g_Player1.y >= g_NrOfCols / 2) endPointY = { rand() % (g_NrOfCols / 2) + 1 };
+		else endPointY = { g_NrOfCols / 2 + rand() % ( g_NrOfCols / 2 - 1) + 1 };
+		
+		if (GetDistance(float(g_Player1.x), float(g_Player1.y), float(endPointY), float(endPointX)) > 5)
+		{
+			if (endPointY % 2 == 1 and endPointX % 2 == 1) break;
+		}
+		
+	}
+
+	//generate the enemy
+	while (true)
+	{
+		g_Enemy1.x = { rand() % (g_NrOfRows - 2) + 1 };
+		g_Enemy1.y = { rand() % (g_NrOfCols - 2) + 1 };
+
+		if (GetDistance(float(g_Player1.x), float(g_Player1.y), float(g_Enemy1.x), float(g_Enemy1.y)) > 8)
+		{
+			if (endPointX != g_Enemy1.x or g_Enemy1.y != enemyY) break;
+		}
+
+	}
+
+	g_MazeArray[endPointX][endPointY] = int(MazeEntity::endPoint);
+	g_Enemy1.isAlive = true;
+
+	//Generate random Paths openings
+	for (int i = 0; i < int(4 * (g_NrOfCols + g_NrOfRows) / 5); i++)
+	{
+		while (true)
+		{
+			const int randX{ rand() % (g_NrOfRows - 2) + 1 };
+			const int randY{ rand() % (g_NrOfCols - 2) + 1 };
+			if (g_MazeArray[randX][randY] == int(MazeEntity::wall))
+			{
+				g_MazeArray[randX][randY] = int(MazeEntity::path);
+				break;
+			}
+		}
+	}
+
+
 }
 
 std::vector<Point2i> getAdjacentArray(int x, int y)
 {
 	std::vector<Point2i> validPos{};
 
-	//if (isValidPos(x - 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y - 2 });
 	if (isValidPos(x - 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y });
-	//if (isValidPos(x - 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x - 2, y + 2 });
 	if (isValidPos(x, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y - 2 });
 	if (isValidPos(x, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x    , y + 2 });
-	//if (isValidPos(x + 2, y - 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y - 2 });
 	if (isValidPos(x + 2, y, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y });
-	//if (isValidPos(x + 2, y + 2, g_NrOfRows, g_NrOfCols)) validPos.push_back(Point2i{ x + 2, y + 2 });
 
 	return validPos;
 }
@@ -367,6 +412,7 @@ void MoveEntity(const Direction& dir, Entity& entity)
 	if (dir == Direction::left || dir == Direction::right)
 	{
 		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
+		//if (g_MazeArray[entity.x + int(dir)][entity.y] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.x += int(dir);
@@ -381,11 +427,11 @@ void MoveEntity(const Direction& dir, Entity& entity)
 			ClearEnemies();
 			GenerateNewMaze(); // need to delete player and enemies and reload them
 		}
-
 	}
 	else if (dir == Direction::up || dir == Direction::down)
 	{
 		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path))
+		//if (g_MazeArray[entity.x][entity.y + int(dir) / 2] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.y += int(dir) / 2;
@@ -452,7 +498,7 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 {
 	float distBetPlAndEn = GetDistance(float(g_Player1.x), float(g_Player1.y), float(g_Enemy1.x), float(g_Enemy1.y));
 	if (distBetPlAndEn <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
-	else if (distBetPlAndEn >= 10) entity.isFollowing = false;
+	else if (distBetPlAndEn >= 20) entity.isFollowing = false;
 	if (entity.isFollowing)
 	{
 		if (IsEnemyPassedPLayer(entity)) SwitchEntityDirection(entity);
