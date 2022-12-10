@@ -347,7 +347,7 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 {
 	float distBetPlAndEn = GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y));
 	if (distBetPlAndEn <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
-	else if (distBetPlAndEn >= 20) entity.isFollowing = false;
+	else if (distBetPlAndEn >= 10) entity.isFollowing = false;
 	if (entity.isFollowing)
 	{
 		if (IsEnemyPassedPLayer(entity)) SwitchEntityDirection(entity);
@@ -381,6 +381,7 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 	}
 	else
 	{
+		if (abs(entity.totalMovement) > movement) entity.totalMovement = 0;
 		switch (entity.currDir)
 		{
 		case Direction::up:
@@ -543,13 +544,14 @@ void MoveEntity(const Direction& dir, Entity& entity)
 	entity.currDir = dir;
 	if (dir == Direction::left || dir == Direction::right)
 	{
+		if (!entity.isPlayableCharacter) entity.totalMovement += int(dir);
+		
 		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
 			//if (g_MazeArray[entity.x + int(dir)][entity.y] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.x += int(dir);
-			if (entity.isPlayableCharacter == false)
-				entity.totalMovement += int(dir);
+
 		}
 		else if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
 		{
@@ -564,14 +566,13 @@ void MoveEntity(const Direction& dir, Entity& entity)
 	}
 	else if (dir == Direction::up || dir == Direction::down)
 	{
+		if (!entity.isPlayableCharacter) entity.totalMovement += int(dir) / 2;
+
 		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path))
 			//if (g_MazeArray[entity.x][entity.y + int(dir) / 2] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.y += int(dir) / 2;
-			if (entity.isPlayableCharacter == false)
-				entity.totalMovement += int(dir) / 2;
-
 		}
 		else if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::endPoint) && entity.isPlayableCharacter)
 		{
