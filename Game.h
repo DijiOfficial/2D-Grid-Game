@@ -56,6 +56,7 @@ struct Entity {
 	bool isFollowing;
 	bool isPlayableCharacter;
 	bool isAlive{ true };
+	bool isEnemySpawner{};
 };
 Entity g_Player{ }, g_Enemy1{}, g_Boss{};
 struct Beam {
@@ -66,13 +67,14 @@ struct Beam {
 	
 }; 
 std::vector<Beam> g_BeamArray{};
+std::vector<Entity> g_EnemyArray{};
+std::vector<Entity> g_SpawnerArray{};
 
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture[2]{};
 Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_InfoPanel{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false }, g_IsInMenu{ false };
 int g_LevelNr{ 1 };
-
 // Declare your own functions here
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
@@ -98,8 +100,12 @@ bool IsGameLost();
 void DeleteTextures();
 void InitializeTextures();
 void ClearEnemies();
+void ClearAllBeams();
 void KillEnemy();
+void KillBoss();
+void SpawnLadder();
 bool CheckEnemyCollision(const Beam& beam);
+bool CheckBossCollision(const Beam& beam);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

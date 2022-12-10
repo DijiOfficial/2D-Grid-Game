@@ -60,6 +60,7 @@ void Update(float elapsedSec)
 		UpdateTime();
 		UpdateBeam();
 		KillEnemy();
+		KillBoss();
 		DeleteBeam();
 	}
 }
@@ -160,6 +161,11 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // Maze generation
 void GenerateNewMaze()
 {
+	//Clearing previous level resources
+	ClearAllBeams();
+	ClearEnemies();
+	g_LevelNr++;
+	UpdateLevel(g_LevelNr);
 	//generating new maze size
 	int cols{ (rand() % 6) * 2 + 25 };
 	int rows{ cols };
@@ -224,9 +230,7 @@ void GenerateNewMaze()
 		g_Boss.y = g_NrOfCols / 2;
 		g_Boss.isBoss = true;
 		g_Boss.isAlive = true;
-
-		Display2DArray();
-	
+		g_Boss.health = 4;	
 	}
 	else
 	{
@@ -633,7 +637,6 @@ void MoveEntity(const Direction& dir, Entity& entity)
 {
 	bool isCollidingWithEntityX{};
 	bool isCollidingWithEntityY{};
-	if (entity.isBoss) std::cout << int(entity.currDir) << std::endl;
 	entity.currDir = dir;
 	if (dir == Direction::left || dir == Direction::right)
 	{
@@ -670,9 +673,6 @@ void MoveEntity(const Direction& dir, Entity& entity)
 			//std::cout << "You won!";
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.x += int(dir);
-			ClearEnemies();
-			g_LevelNr++;
-			UpdateLevel(g_LevelNr);
 			GenerateNewMaze(); // need to delete player and enemies and reload them
 		}
 	}
@@ -712,9 +712,6 @@ void MoveEntity(const Direction& dir, Entity& entity)
 			//std::cout << "You won!";
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
 			entity.y += int(dir) / 2;
-			ClearEnemies();
-			g_LevelNr++;
-			UpdateLevel(g_LevelNr);
 			GenerateNewMaze();
 		}
 	}
@@ -875,11 +872,48 @@ bool CheckEnemyCollision(const Beam& beam)
 	return false;
 }
 
+bool CheckBossCollision(const Beam& beam)
+{
+
+	Point2i beamPosInArr{ int(beam.x / g_BlockSizeX) , int(beam.y / g_BlockSizeY) };
+	if (beam.currDir == Direction::right)
+	{
+		beamPosInArr.x = int(beam.x / g_BlockSizeX - 0.2f);
+		if (g_MazeArray[beamPosInArr.x + 1][beamPosInArr.y] == int(MazeEntity::boss)) return true;
+	}
+	else if (beam.currDir == Direction::left)
+	{
+		beamPosInArr.x = int(beam.x / g_BlockSizeX + 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y] == int(MazeEntity::boss)) return true;
+	}
+	else if (beam.currDir == Direction::up)
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY - 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y + 1] == int(MazeEntity::boss)) return true;
+	}
+	else
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY + 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y] == int(MazeEntity::boss)) return true;
+	}
+
+	return false;
+}
+
+void ClearAllBeams()
+{
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		g_BeamArray.erase(g_BeamArray.begin() + i);
+	}
+	if (g_BeamArray.size() > 0) ClearAllBeams();
+}
+
 void DeleteBeam()
 {
 	for (int i = 0; i < g_BeamArray.size(); i++)
 	{	
-		if (CheckBeamCollision(g_BeamArray[i]) || CheckEnemyCollision(g_BeamArray[i]))
+		if (CheckBeamCollision(g_BeamArray[i]) || CheckEnemyCollision(g_BeamArray[i]) or CheckBossCollision(g_BeamArray[i]))
 			g_BeamArray.erase(g_BeamArray.begin() + i);
 	}
 }
@@ -891,6 +925,34 @@ void KillEnemy()
 		if (CheckEnemyCollision(g_BeamArray[i]))
 		{
 			g_Enemy1.isAlive = false;
+		}
+	}
+}
+
+void SpawnLadder()
+{
+	if (g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2] == int(MazeEntity::path)) g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2] = int(MazeEntity::endPoint);
+	else if (g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2 - 5] == int(MazeEntity::path)) g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2 - 5] = int(MazeEntity::endPoint);
+	else
+	{
+		int pos = rand() % (g_NrOfRows - 2);
+		if (g_MazeArray[pos][pos] == int(MazeEntity::path))	g_MazeArray[pos][pos] = int(MazeEntity::endPoint);
+		else SpawnLadder();
+	}
+}
+
+void KillBoss()
+{
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		if (CheckBossCollision(g_BeamArray[i]))
+		{
+			g_Boss.health -= 1;
+			if (g_Boss.health == 0)
+			{
+				g_Boss.isAlive = false;
+				SpawnLadder();
+			}
 		}
 	}
 }
