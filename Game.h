@@ -46,22 +46,23 @@ struct Entity {
 	int x;
 	int y;
 	Texture texture;
-	Direction currDir;
+	Direction currDir{ Direction::right };
 	int totalMovement;
 	bool isFollowing;
 	bool isPlayableCharacter;
 	bool isAlive{ true };
 };
-Entity g_Player1{ }, g_Enemy1{};
+Entity g_Player{ }, g_Enemy1{};
 struct Beam {
 	float x;
 	float y;
-
-	Beam(float x_pos, float y_pos) : x(x_pos), y(y_pos) {}
+	Direction currDir;
+	Beam(float x_pos, float y_pos) : x(x_pos), y(y_pos), currDir(Direction::right) {};
+	
 }; 
 std::vector<Beam> g_BeamArray{};
 
-Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture{};
+Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture[2]{};
 Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false };
@@ -92,6 +93,8 @@ bool IsGameLost();
 void DeleteTextures();
 void InitializeTextures();
 void ClearEnemies();
+void KillEnemy();
+bool CheckEnemyCollision(const Beam& beam);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

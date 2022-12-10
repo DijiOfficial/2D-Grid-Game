@@ -14,7 +14,7 @@ void Start()
 	const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 	InitializeMaze();
 	InitializeGameResources(playerStartPosX, playerStartPosY);
-	GenerateNewMaze();
+	//GenerateNewMaze();   //uncomment for randomGen of first level
 
 	const float scale{ 0.5f };
 	g_ButtonRect.left = g_WindowWidth / 2 - g_StartButton.width / 2 * scale;
@@ -38,6 +38,7 @@ void Draw()
 		{
 			DrawMaze();
 			DrawTexture(g_LevelTexture, Point2f{ 20.f, g_WindowHeight - 80.f });
+			DrawBeams();
 		}
 	}
 	else
@@ -46,23 +47,19 @@ void Draw()
 		DrawTexture(g_StartButton, g_ButtonRect);
 
 	}
-
-	if (g_IsGameStarted && !IsGameLost())
-		DrawBeams();
-
+		
 }
 
 void Update(float elapsedSec)
 {
-	UpdatePlayerPos(g_Player1);
-	UpdateTime();
-
 	if (g_IsGameStarted && !IsGameLost())
-	{
+	{	
+		UpdatePlayerPos(g_Player);
+		UpdateTime();
 		UpdateBeam();
+		KillEnemy();
 		DeleteBeam();
 	}
-
 }
 
 void End()
@@ -86,20 +83,23 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-	switch (key)
+	if(!IsGameLost())
 	{
-	case SDLK_LEFT:
-		MoveEntity(Direction::left, g_Player1);
-		break;
-	case SDLK_RIGHT:
-		MoveEntity(Direction::right, g_Player1);
-		break;
-	case SDLK_UP:
-		MoveEntity(Direction::up, g_Player1);
-		break;
-	case SDLK_DOWN:
-		MoveEntity(Direction::down, g_Player1);
-		break;
+		switch (key)
+		{
+		case SDLK_LEFT:
+			MoveEntity(Direction::left, g_Player);
+			break;
+		case SDLK_RIGHT:
+			MoveEntity(Direction::right, g_Player);
+			break;
+		case SDLK_UP:
+			MoveEntity(Direction::up, g_Player);
+			break;
+		case SDLK_DOWN:
+			MoveEntity(Direction::down, g_Player);
+			break;
+		}
 	}
 }
 
@@ -107,8 +107,9 @@ void OnKeyUpEvent(SDL_Keycode key)
 {
 	if (key == SDLK_SPACE)
 	{
-		const float beamPosX{ (g_Player1.x + 0.5f) * g_BlockSizeX }, beamPosY{ g_Player1.y * g_BlockSizeY };
+		const float beamPosX{ (g_Player.x ) * g_BlockSizeX }, beamPosY{ g_Player.y * g_BlockSizeY };
 		g_BeamArray.emplace_back(beamPosX, beamPosY);
+		g_BeamArray[g_BeamArray.size() - 1].currDir = g_Player.currDir;
 	}
 }
 
@@ -163,7 +164,7 @@ void GenerateNewMaze()
 	g_BlockSizeY = { g_WindowHeight / cols };
 
 	//clear the player before generating
-	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::path);
+	g_MazeArray[g_Player.x][g_Player.y] = int(MazeEntity::path);
 
 	//create new array
 	int** newMazeArray = new int* [rows];
@@ -191,21 +192,21 @@ void GenerateNewMaze()
 		}
 	}
 
-	DepthFirstSearch(g_Player1.x, g_Player1.y);
-	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
+	DepthFirstSearch(g_Player.x, g_Player.y);
+	g_MazeArray[g_Player.x][g_Player.y] = int(MazeEntity::player1);
 
 	//generating the endPoint
 	int endPointY{}, endPointX{};
 	int enemyX{}, enemyY{};
 	while (true)
 	{
-		if (g_Player1.x >= g_NrOfRows / 2) endPointX = { rand() % (g_NrOfRows / 2) + 1 };
+		if (g_Player.x >= g_NrOfRows / 2) endPointX = { rand() % (g_NrOfRows / 2) + 1 };
 		else endPointX = { g_NrOfRows / 2 + rand() % (g_NrOfRows / 2 - 1) + 1 };
 
-		if (g_Player1.y >= g_NrOfCols / 2) endPointY = { rand() % (g_NrOfCols / 2) + 1 };
+		if (g_Player.y >= g_NrOfCols / 2) endPointY = { rand() % (g_NrOfCols / 2) + 1 };
 		else endPointY = { g_NrOfCols / 2 + rand() % (g_NrOfCols / 2 - 1) + 1 };
 
-		if (GetDistance(float(g_Player1.x), float(g_Player1.y), float(endPointY), float(endPointX)) > 5)
+		if (GetDistance(float(g_Player.x), float(g_Player.y), float(endPointY), float(endPointX)) > 5)
 		{
 			if (endPointY % 2 == 1 and endPointX % 2 == 1) break;
 		}
@@ -218,7 +219,7 @@ void GenerateNewMaze()
 		g_Enemy1.x = { rand() % (g_NrOfRows - 2) + 1 };
 		g_Enemy1.y = { rand() % (g_NrOfCols - 2) + 1 };
 
-		if (GetDistance(float(g_Player1.x), float(g_Player1.y), float(g_Enemy1.x), float(g_Enemy1.y)) > 8)
+		if (GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y)) > 8)
 		{
 			if (endPointX != g_Enemy1.x or g_Enemy1.y != enemyY) break;
 		}
@@ -334,7 +335,7 @@ void UpdateTime()
 
 void UpdatePlayerPos(const Entity& player)
 {
-	g_MazeArray[g_Player1.x][g_Player1.y] = int(MazeEntity::player1);
+	g_MazeArray[g_Player.x][g_Player.y] = int(MazeEntity::player1);
 }
 
 void UpdateLevel(int level)
@@ -344,7 +345,7 @@ void UpdateLevel(int level)
 
 void UpdateEnemyPos(const int movement, Entity& entity)
 {
-	float distBetPlAndEn = GetDistance(float(g_Player1.x), float(g_Player1.y), float(g_Enemy1.x), float(g_Enemy1.y));
+	float distBetPlAndEn = GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y));
 	if (distBetPlAndEn <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
 	else if (distBetPlAndEn >= 20) entity.isFollowing = false;
 	if (entity.isFollowing)
@@ -410,7 +411,10 @@ void UpdateBeam()
 	const float beamSpeed{ 0.2f };
 	for (auto& beam : g_BeamArray)
 	{
-		beam.x += beamSpeed;
+		if (beam.currDir == Direction::left || beam.currDir == Direction::right)
+			beam.x += beamSpeed * int(beam.currDir);
+		else
+			beam.y += beamSpeed * int(beam.currDir) / 2;
 	}
 }
 
@@ -429,34 +433,30 @@ void InitializeMaze()
 			g_MazeArray[j][i] = int(MazeEntity::path);
 		}
 	}
-	for (size_t j = 0; j < 5; j++)
-	{
-		g_MazeArray[j + 10][10] = int(MazeEntity::wall);
-		g_MazeArray[10][j + 10] = int(MazeEntity::wall);
-		g_MazeArray[15][j + 10] = int(MazeEntity::wall);
-		g_MazeArray[j + 10][15] = int(MazeEntity::wall);
-	}
-
-	/*g_MazeArray[25][25] = int(MazeEntity::wall);
-	g_MazeArray[20][25] = int(MazeEntity::wall);
-	g_MazeArray[25][20] = int(MazeEntity::wall);
-	g_MazeArray[20][20] = int(MazeEntity::wall);*/
-
-	g_MazeArray[9][1] = int(MazeEntity::endPoint);
+	for (size_t j = 0; j < 5; j++)							//also dont need this if 1st level randGenerated
+	{														//
+		g_MazeArray[j + 10][10] = int(MazeEntity::wall);	//
+		g_MazeArray[10][j + 10] = int(MazeEntity::wall);	//
+		g_MazeArray[15][j + 10] = int(MazeEntity::wall);	//
+		g_MazeArray[j + 10][15] = int(MazeEntity::wall);	//
+	}														//
+															//
+	g_MazeArray[9][1] = int(MazeEntity::endPoint);			//
 
 }
 
 void InitializeGameResources(int playerStartPosX, int playerStartPosY)
 {
-	//g_Enemy1.x = enemyStartPosX;
-	//g_Enemy1.y = enemyStartPosY;
-	g_Player1.x = playerStartPosX;
-	g_Player1.y = playerStartPosY;
-	//g_Enemy1.currDir = Direction::right;
+	g_Player.x = playerStartPosX;
+	g_Player.y = playerStartPosY;
 
-	//g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy);
+	g_Enemy1.x = 20; // don t need these if the first level is randomly generated
+	g_Enemy1.y = 20; //
+	g_Enemy1.currDir = Direction::right; //
+	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy); //
+
 	g_TimeStart = std::chrono::system_clock::now();
-	g_Player1.isPlayableCharacter = true;
+	g_Player.isPlayableCharacter = true;
 	g_Enemy1.isPlayableCharacter = false;
 }
 
@@ -471,9 +471,10 @@ void InitializeTextures()
 	TextureFromFile("resources/end-point.jpg", g_EndPointTexture);
 	TextureFromFile("resources/wall.jpg", g_WallTexture);
 	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
-	TextureFromFile("resources/player-texture.jpg", g_Player1.texture);
+	TextureFromFile("resources/player-texture.jpg", g_Player.texture);
 
-	TextureFromFile("resources/beam-texture.png", g_BeamTexture);
+	TextureFromFile("resources/beam-texture1.png", g_BeamTexture[0]);
+	TextureFromFile("resources/beam-texture2.png", g_BeamTexture[1]);
 }
 
 void DeleteTextures()
@@ -484,11 +485,12 @@ void DeleteTextures()
 	DeleteTexture(g_WallTexture);
 	DeleteTexture(g_PathTexture);
 	DeleteTexture(g_EndPointTexture);
-	DeleteTexture(g_Player1.texture);
+	DeleteTexture(g_Player.texture);
 	DeleteTexture(g_Enemy1.texture);
 	DeleteTexture(g_LostGamePage);
 	DeleteTexture(g_LevelTexture);
-	DeleteTexture(g_BeamTexture);
+	DeleteTexture(g_BeamTexture[0]);
+	DeleteTexture(g_BeamTexture[1]);
 }
 
 // Draw functions
@@ -502,20 +504,22 @@ void DrawMaze()
 			Rectf cellRect{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
 			if (g_MazeArray[i][j] == int(MazeEntity::wall))
 				DrawTexture(g_WallTexture, cellRect);
-			//SetColor(0.5f, 0.5f, 0.5f);
 			else if (g_MazeArray[i][j] == int(MazeEntity::path))
 				DrawTexture(g_PathTexture, cellRect);
-			//SetColor(0.5f, 1.f, 0.5f);
 			else if (g_MazeArray[i][j] == int(MazeEntity::endPoint))
-				//SetColor(1.f, 1.f, 0.f);
 				DrawTexture(g_EndPointTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
-				DrawTexture(g_Player1.texture, cellRect);
-			//SetColor(1.f, 0.f, 0.f);
+				DrawTexture(g_Player.texture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
-				DrawTexture(g_Enemy1.texture, cellRect);
-			//SetColor(1.f, 0.f, 1.f);
-		//FillRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
+			{
+				if (g_Enemy1.isAlive)
+					DrawTexture(g_Enemy1.texture, cellRect);
+				else
+				{
+					g_MazeArray[i][j] = int(MazeEntity::path);
+					DrawTexture(g_PathTexture, cellRect);
+				}
+			}
 			SetColor(1.f, 1.f, 1.f);
 			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
 		}
@@ -526,7 +530,10 @@ void DrawBeams()
 {
 	for (int i = 0; i < g_BeamArray.size(); i++)
 	{
-		DrawTexture(g_BeamTexture, Rectf{ g_BeamArray[i].x, g_BeamArray[i].y, g_BlockSizeX,g_BlockSizeY });
+		if(g_BeamArray[i].currDir == Direction::left || g_BeamArray[i].currDir == Direction::right)
+			DrawTexture(g_BeamTexture[0], Rectf{g_BeamArray[i].x, g_BeamArray[i].y, g_BlockSizeX,g_BlockSizeY});
+		else
+			DrawTexture(g_BeamTexture[1], Rectf{ g_BeamArray[i].x, g_BeamArray[i].y, g_BlockSizeX,g_BlockSizeY });
 	}
 }
 
@@ -603,35 +610,37 @@ bool IsMazeCellPLayerOrPath(Entity& entity)
 
 bool IsEnemyPassedPLayer(Entity& entity)
 {
-	return g_Player1.x == entity.x or g_Player1.y == entity.y;
+	return g_Player.x == entity.x or g_Player.y == entity.y;
 }
 
 void SwitchEntityDirection(Entity& entity)
 {
-	if (g_Player1.x > entity.x) entity.currDir = Direction::right;
-	else if (g_Player1.x < entity.x) entity.currDir = Direction::left;
-	else if (g_Player1.y > entity.y) entity.currDir = Direction::up;
-	else if (g_Player1.y < entity.y) entity.currDir = Direction::down;
+	if (g_Player.x > entity.x) entity.currDir = Direction::right;
+	else if (g_Player.x < entity.x) entity.currDir = Direction::left;
+	else if (g_Player.y > entity.y) entity.currDir = Direction::up;
+	else if (g_Player.y < entity.y) entity.currDir = Direction::down;
 }
 
 bool IsDirectionCorrect(Entity& entity)
 {
-	if (g_Player1.x > entity.x and entity.currDir == Direction::right) return true;
-	else if (g_Player1.x < entity.x and entity.currDir == Direction::left) return true;
-	else if (g_Player1.y > entity.y and entity.currDir == Direction::up) return true;
-	else if (g_Player1.y < entity.y and entity.currDir == Direction::down) return true;
+	if (g_Player.x > entity.x and entity.currDir == Direction::right) return true;
+	else if (g_Player.x < entity.x and entity.currDir == Direction::left) return true;
+	else if (g_Player.y > entity.y and entity.currDir == Direction::up) return true;
+	else if (g_Player.y < entity.y and entity.currDir == Direction::down) return true;
 	return false;
 }
 
 // Lost game functions
 bool IsGameLost()
 {
-	if (g_Player1.x == g_Enemy1.x)
-		return (g_Player1.y == g_Enemy1.y + 1 || g_Player1.y == g_Enemy1.y - 1);
+	if(g_Enemy1.isAlive)
+	{
+		if (g_Player.x == g_Enemy1.x)
+			return (g_Player.y == g_Enemy1.y + 1 || g_Player.y == g_Enemy1.y - 1);
 
-	if (g_Player1.y == g_Enemy1.y)
-		return (g_Player1.x == g_Enemy1.x + 1 || g_Player1.x == g_Enemy1.x - 1);
-
+		if (g_Player.y == g_Enemy1.y)
+			return (g_Player.x == g_Enemy1.x + 1 || g_Player.x == g_Enemy1.x - 1);
+	}
 	return false;
 }
 
@@ -639,9 +648,55 @@ bool IsGameLost()
 bool CheckBeamCollision(const Beam& beam)
 {
 
-	const Point2i beamPosInArr{ int(beam.x / g_BlockSizeX),int(beam.y / g_BlockSizeY) };
+	Point2i beamPosInArr{ int(beam.x / g_BlockSizeX) , int(beam.y / g_BlockSizeY) };
+	if(beam.currDir == Direction::right)
+	{
+		beamPosInArr.x = int(beam.x / g_BlockSizeX - 0.2f);
+		if (g_MazeArray[beamPosInArr.x + 1][beamPosInArr.y] == int(MazeEntity::wall)) return true;
+	}
+	else if (beam.currDir == Direction::left)
+	{
+		beamPosInArr.x = int(beam.x / g_BlockSizeX + 0.2f);
+		if (g_MazeArray[beamPosInArr.x ][beamPosInArr.y] == int(MazeEntity::wall)) return true;
+	}
+	else if (beam.currDir == Direction::up)
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY - 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y + 1] == int(MazeEntity::wall)) return true;
+	}
+	else
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY + 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y ] == int(MazeEntity::wall)) return true;
+	}
 
-	if (g_MazeArray[beamPosInArr.x + 1][beamPosInArr.y] == int(MazeEntity::wall)) return true;
+	return false;
+}
+
+bool CheckEnemyCollision(const Beam& beam)
+{
+
+	Point2i beamPosInArr{ int(beam.x / g_BlockSizeX) , int(beam.y / g_BlockSizeY) };
+	if (beam.currDir == Direction::right)
+	{	
+		beamPosInArr.x = int(beam.x / g_BlockSizeX - 0.2f);
+		if (g_MazeArray[beamPosInArr.x + 1][beamPosInArr.y] == int(MazeEntity::enemy)) return true;
+	}
+	else if (beam.currDir == Direction::left)
+	{
+		beamPosInArr.x = int(beam.x / g_BlockSizeX + 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y] == int(MazeEntity::enemy)) return true;
+	}
+	else if (beam.currDir == Direction::up)
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY - 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y + 1] == int(MazeEntity::enemy)) return true;
+	}
+	else
+	{
+		beamPosInArr.y = int(beam.y / g_BlockSizeY + 0.2f);
+		if (g_MazeArray[beamPosInArr.x][beamPosInArr.y] == int(MazeEntity::enemy)) return true;
+	}
 
 	return false;
 }
@@ -649,9 +704,20 @@ bool CheckBeamCollision(const Beam& beam)
 void DeleteBeam()
 {
 	for (int i = 0; i < g_BeamArray.size(); i++)
-	{
-		if (CheckBeamCollision(g_BeamArray[i]))
+	{	
+		if (CheckBeamCollision(g_BeamArray[i]) || CheckEnemyCollision(g_BeamArray[i]))
 			g_BeamArray.erase(g_BeamArray.begin() + i);
+	}
+}
+
+void KillEnemy()
+{
+	for (int i = 0; i < g_BeamArray.size(); i++)
+	{
+		if (CheckEnemyCollision(g_BeamArray[i]))
+		{
+			g_Enemy1.isAlive = false;
+		}
 	}
 }
 
