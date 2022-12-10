@@ -63,9 +63,9 @@ struct Beam {
 std::vector<Beam> g_BeamArray{};
 
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture[2]{};
-Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{};
+Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_InfoPanel{};
 Rectf g_ButtonRect{} ;
-bool g_IsGameStarted{ false };
+bool g_IsGameStarted{ false }, g_IsInMenu{ false };
 int g_LevelNr{ 1 };
 
 // Declare your own functions here

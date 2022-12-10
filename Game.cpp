@@ -39,6 +39,8 @@ void Draw()
 			DrawMaze();
 			DrawTexture(g_LevelTexture, Point2f{ 20.f, g_WindowHeight - 80.f });
 			DrawBeams();
+			if (g_IsInMenu)
+				DrawTexture(g_InfoPanel, Point2f{ 0.f,0.f });
 		}
 	}
 	else
@@ -52,7 +54,7 @@ void Draw()
 
 void Update(float elapsedSec)
 {
-	if (g_IsGameStarted && !IsGameLost())
+	if (g_IsGameStarted && !IsGameLost() && !g_IsInMenu)
 	{	
 		UpdatePlayerPos(g_Player);
 		UpdateTime();
@@ -83,7 +85,7 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-	if(!IsGameLost())
+	if(!IsGameLost() && !g_IsInMenu)
 	{
 		switch (key)
 		{
@@ -105,12 +107,13 @@ void OnKeyDownEvent(SDL_Keycode key)
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
-	if (key == SDLK_SPACE)
+	if (key == SDLK_SPACE && !g_IsInMenu)
 	{
 		const float beamPosX{ (g_Player.x ) * g_BlockSizeX }, beamPosY{ g_Player.y * g_BlockSizeY };
 		g_BeamArray.emplace_back(beamPosX, beamPosY);
 		g_BeamArray[g_BeamArray.size() - 1].currDir = g_Player.currDir;
 	}
+	if (key == SDLK_i) g_IsInMenu = !g_IsInMenu;
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -476,6 +479,7 @@ void InitializeTextures()
 
 	TextureFromFile("resources/beam-texture1.png", g_BeamTexture[0]);
 	TextureFromFile("resources/beam-texture2.png", g_BeamTexture[1]);
+	TextureFromFile("resources/info-panel.png", g_InfoPanel);
 }
 
 void DeleteTextures()
@@ -492,6 +496,7 @@ void DeleteTextures()
 	DeleteTexture(g_LevelTexture);
 	DeleteTexture(g_BeamTexture[0]);
 	DeleteTexture(g_BeamTexture[1]);
+	DeleteTexture(g_InfoPanel);
 }
 
 // Draw functions
