@@ -35,24 +35,29 @@ enum class Direction {
 	right = 1,
 	down = -2
 }; 
-enum class MazeEntity {
+enum class MazeEntity
+{
 	path = 1,
 	wall = 0,
 	player1 = 3,
 	endPoint = 2,
-	enemy = 4
+	enemy = 4,
+	boss = 5,
 }; 
+
 struct Entity {
 	int x;
 	int y;
+	int health;
 	Texture texture;
 	Direction currDir{ Direction::right };
 	int totalMovement;
+	bool isBoss;
 	bool isFollowing;
 	bool isPlayableCharacter;
 	bool isAlive{ true };
 };
-Entity g_Player{ }, g_Enemy1{};
+Entity g_Player{ }, g_Enemy1{}, g_Boss{};
 struct Beam {
 	float x;
 	float y;
