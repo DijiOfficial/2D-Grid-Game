@@ -194,7 +194,11 @@ void GenerateNewMaze()
 			g_MazeArray[j][i] = int(MazeEntity::wall);
 		}
 	}
-
+	if (g_LevelNr == 1)
+	{
+		g_Player.x = 1;
+		g_Player.y = 1;
+	}
 	DepthFirstSearch(g_Player.x, g_Player.y);
 	g_MazeArray[g_Player.x][g_Player.y] = int(MazeEntity::player1);
 
@@ -348,6 +352,7 @@ void UpdateLevel(int level)
 
 void UpdateEnemyPos(const int movement, Entity& entity)
 {
+	bool hasMovedSideways{ false };
 	float distBetPlAndEn = GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y));
 	if (distBetPlAndEn <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
 	else if (distBetPlAndEn >= 10) entity.isFollowing = false;
@@ -357,30 +362,33 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 
 		if (!IsMazeCellPLayerOrPath(entity))
 		{
+			hasMovedSideways = true;
 			Direction originalDir{ entity.currDir };
 			std::cout << "invalid poopy direction" << std::endl;
 			switch (entity.currDir)
 			{
-			case Direction::down:
-			case Direction::up:
-				entity.currDir = Direction::left;
-				if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::left, entity);
-				else MoveEntity(Direction::right, entity);
-				entity.currDir = originalDir;
-				break;
-			case Direction::left:
-			case Direction::right:
-				entity.currDir = Direction::down;
-				if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::down, entity);
-				else MoveEntity(Direction::up, entity);
-				entity.currDir = originalDir;
-				break;
-			default:
-				break;
+				case Direction::down:
+				case Direction::up:
+					entity.currDir = Direction::left;
+					if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::left, entity);
+					else MoveEntity(Direction::right, entity);
+					entity.currDir = originalDir;
+					break;
+				case Direction::left:
+				case Direction::right:
+					entity.currDir = Direction::down;
+					if (IsMazeCellPLayerOrPath(entity)) MoveEntity(Direction::down, entity);
+					else MoveEntity(Direction::up, entity);
+					entity.currDir = originalDir;
+					break;
+				default:
+					break;
 			}
 		}
+		else hasMovedSideways = false;
+
 		if (!IsDirectionCorrect(entity)) SwitchEntityDirection(entity);
-		MoveEntity(entity.currDir, entity);
+		if (!hasMovedSideways) MoveEntity(entity.currDir, entity);
 	}
 	else
 	{
@@ -551,7 +559,8 @@ void MoveEntity(const Direction& dir, Entity& entity)
 	{
 		if (!entity.isPlayableCharacter) entity.totalMovement += int(dir);
 		
-		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path))
+		bool isCollidingWithEntityX{ g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::player1) or g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::enemy) };
+		if (g_MazeArray[entity.x + int(dir)][entity.y] == int(MazeEntity::path) or isCollidingWithEntityX)
 			//if (g_MazeArray[entity.x + int(dir)][entity.y] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
@@ -573,7 +582,8 @@ void MoveEntity(const Direction& dir, Entity& entity)
 	{
 		if (!entity.isPlayableCharacter) entity.totalMovement += int(dir) / 2;
 
-		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path))
+		bool isCollidingWithEntityY{ g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::player1) or g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::enemy) };
+		if (g_MazeArray[entity.x][entity.y + int(dir) / 2] == int(MazeEntity::path) or isCollidingWithEntityY)
 			//if (g_MazeArray[entity.x][entity.y + int(dir) / 2] != int(MazeEntity::endPoint))
 		{
 			g_MazeArray[entity.x][entity.y] = int(MazeEntity::path);
@@ -641,11 +651,12 @@ bool IsGameLost()
 {
 	if(g_Enemy1.isAlive)
 	{
-		if (g_Player.x == g_Enemy1.x)
-			return (g_Player.y == g_Enemy1.y + 1 || g_Player.y == g_Enemy1.y - 1);
+		return g_Player.x == g_Enemy1.x and g_Player.y == g_Enemy1.y;
+		//if (g_Player.x == g_Enemy1.x)
+		//	return (g_Player.y == g_Enemy1.y + 1 || g_Player.y == g_Enemy1.y - 1);
 
-		if (g_Player.y == g_Enemy1.y)
-			return (g_Player.x == g_Enemy1.x + 1 || g_Player.x == g_Enemy1.x - 1);
+		//if (g_Player.y == g_Enemy1.y)
+		//	return (g_Player.x == g_Enemy1.x + 1 || g_Player.x == g_Enemy1.x - 1);
 	}
 	return false;
 }
