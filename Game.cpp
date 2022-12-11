@@ -47,7 +47,6 @@ void Draw()
 	{
 		DrawTexture(g_StartPage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
 		DrawTexture(g_StartButton, g_ButtonRect);
-
 	}
 		
 }
@@ -192,7 +191,7 @@ void GenerateNewMaze()
 	g_NrOfRows = rows;
 	g_NrOfCols = cols;
 	
-	if (g_LevelNr == 2)
+	if (g_LevelNr % g_LevelBossRoom == 0)
 	{
 		//fill 
 		for (int i = 0; i < g_NrOfCols; i++)
@@ -230,7 +229,7 @@ void GenerateNewMaze()
 		g_Boss.y = g_NrOfCols / 2;
 		g_Boss.isBoss = true;
 		g_Boss.isAlive = true;
-		g_Boss.health = 4;	
+		g_Boss.health = 4 * g_LevelNr / g_LevelBossRoom;
 	}
 	else
 	{
@@ -372,11 +371,20 @@ void UpdateTime()
 		g_TimeEnd = std::chrono::system_clock::now();
 		g_DeltaTime = g_TimeEnd - g_TimeStart;
 		g_TotalTimePassed += g_DeltaTime.count();
+		g_TotalTimePassedForSpawner += g_DeltaTime.count();
 		g_TimeStart = std::chrono::system_clock::now();
 		g_Nrframes = 0;
 	}
 
-	//need a function to load and unload them or something and reassign them when a new level is made. maybe inside a dynamic array?
+	//if (g_TotalTimePassedForSpawner > 0 and g_TotalTimePassedForSpawner - 2 >= 0)
+	//{
+	//	for (int i = 0; i < g_SpawnerArray.size(); i++)
+	//	{
+	//		SpawnEnemy(g_SpawnerArray[i].x, g_SpawnerArray[i].y);
+	//	}
+	//	g_TotalTimePassedForSpawner = 0;
+	//}
+
 	if (g_Enemy1.isAlive)
 	{
 		if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
@@ -519,7 +527,7 @@ void InitializeMaze()
 	}														//
 															//
 	g_MazeArray[9][1] = int(MazeEntity::endPoint);			//
-
+	g_MazeArray[4][18] = int(MazeEntity::spawner);			//
 }
 
 void InitializeGameResources(int playerStartPosX, int playerStartPosY)
@@ -551,6 +559,7 @@ void InitializeTextures()
 	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
 	TextureFromFile("resources/player-texture.jpg", g_Player.texture);
 	TextureFromFile("resources/Boss.png", g_Boss.texture);
+	TextureFromFile("resources/spawner.png", g_SpawnerTexture);
 
 	TextureFromFile("resources/beam-texture1.png", g_BeamTexture[0]);
 	TextureFromFile("resources/beam-texture2.png", g_BeamTexture[1]);
@@ -571,19 +580,21 @@ void DeleteTextures()
 	DeleteTexture(g_LevelTexture);
 	DeleteTexture(g_BeamTexture[0]);
 	DeleteTexture(g_BeamTexture[1]);
-	DeleteTexture(g_InfoPanel);
+	DeleteTexture(g_Boss.texture);
+	DeleteTexture(g_SpawnerTexture);
 }
 
 // Draw functions
 void DrawMaze()
 {
-
+	Rectf cellRect{};
+	Rectf bossCellRect{};
 	for (size_t i = 0; i < g_NrOfRows; i++)
 	{
 		for (size_t j = 0; j < g_NrOfCols; j++)
 		{
-			Rectf cellRect{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
-			Rectf bossCellRect{  g_BlockSizeX * i, g_BlockSizeY * j, 2 * g_BlockSizeX, 2 * g_BlockSizeY };
+			cellRect = Rectf{ g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY };
+			bossCellRect = Rectf{  g_BlockSizeX * i, g_BlockSizeY * j, 2 * g_BlockSizeX, 2 * g_BlockSizeY };
 			if (g_MazeArray[i][j] == int(MazeEntity::wall))
 				DrawTexture(g_WallTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::path))
@@ -592,6 +603,8 @@ void DrawMaze()
 				DrawTexture(g_EndPointTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::player1))
 				DrawTexture(g_Player.texture, cellRect);
+			else if (g_MazeArray[i][j] == int(MazeEntity::spawner))
+				DrawTexture(g_SpawnerTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
 			{
 				if (g_Enemy1.isAlive)
@@ -602,10 +615,11 @@ void DrawMaze()
 					DrawTexture(g_PathTexture, cellRect);
 				}
 			}
-			else if (g_MazeArray[i][j] == int(MazeEntity::boss))
+			else if (g_MazeArray[i][j] == int(MazeEntity::boss) and g_MazeArray[i + 1][j + 1] == int(MazeEntity::boss))
 			{
 				if (g_Boss.isAlive)
-					DrawTexture(g_Boss.texture, bossCellRect);
+				{
+					DrawTexture(g_Boss.texture, bossCellRect);				}
 				else
 				{
 					g_MazeArray[i + 1][j] = int(MazeEntity::path);
@@ -618,6 +632,16 @@ void DrawMaze()
 			SetColor(1.f, 1.f, 1.f);
 			DrawRect(g_BlockSizeX * i, g_BlockSizeY * j, g_BlockSizeX, g_BlockSizeY);
 		}
+	}
+	if (g_Boss.isAlive)//healthbar maybe function?
+	{
+		SetColor(1.f, 0.f, 0.f);
+		FillRect(g_Boss.x * cellRect.width, (g_Boss.y + 2) * cellRect.height + bossCellRect.height / 8.f, bossCellRect.width, bossCellRect.height / 8.f);
+		SetColor(0.f, 1.f, 0.f);
+		FillRect(g_Boss.x * cellRect.width, (g_Boss.y + 2) * cellRect.height + bossCellRect.height / 8.f, g_Boss.health * bossCellRect.width / float(4 * g_LevelNr / g_LevelBossRoom), bossCellRect.height / 8.f);
+		SetColor(1.f, 1.f, 1.f);
+		DrawRect(g_Boss.x * cellRect.width, (g_Boss.y + 2) * cellRect.height + bossCellRect.height / 8.f, bossCellRect.width, bossCellRect.height / 8.f);
+
 	}
 }
 
@@ -815,6 +839,20 @@ bool IsGameLost()
 	return false;
 }
 
+//spawner functions
+//void CreateSpawner(int x, int y)
+//{
+//	//g_SpawnerArray.emplace_back(x, y);
+//}
+//
+//void SpawnEnemy(int x, int y)
+//{
+//	//for (int i = 0; i < 5; i++)
+//	//{
+//
+//	//}
+//}
+
 // Beams functions
 bool CheckBeamCollision(const Beam& beam)
 {
@@ -931,14 +969,9 @@ void KillEnemy()
 
 void SpawnLadder()
 {
-	if (g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2] == int(MazeEntity::path)) g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2] = int(MazeEntity::endPoint);
-	else if (g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2 - 5] == int(MazeEntity::path)) g_MazeArray[g_NrOfRows / 2][g_NrOfCols / 2 - 5] = int(MazeEntity::endPoint);
-	else
-	{
-		int pos = rand() % (g_NrOfRows - 2);
-		if (g_MazeArray[pos][pos] == int(MazeEntity::path))	g_MazeArray[pos][pos] = int(MazeEntity::endPoint);
-		else SpawnLadder();
-	}
+	int pos = rand() % (g_NrOfRows - 2);
+	if (pos % 2 == 1 and g_MazeArray[pos][pos] == int(MazeEntity::path)) g_MazeArray[pos][pos] = int(MazeEntity::endPoint);
+	else SpawnLadder();
 }
 
 void KillBoss()
