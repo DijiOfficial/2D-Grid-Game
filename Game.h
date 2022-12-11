@@ -82,11 +82,13 @@ std::vector<Entity> g_EnemyArray{};
 std::vector<Entity> g_SpawnerArray{};
 
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture[2]{};
-Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_InfoPanel{}, g_SpawnerTexture{}, g_Enemy{};
+Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_ScoreTexture{}, g_MaxScoreTexture{}, 
+g_InfoPanel{}, g_SpawnerTexture{}, g_ScoreText{}, g_Enemy{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false }, g_IsInMenu{ false };
-int g_LevelNr{ 1 };
-int g_LevelBossRoom{ 2 };
+int g_LevelNr{ 0 };
+int g_Score{ 0 }, g_MaxScore{ -1 };
+int g_LevelBossRoom{ 3 };
 
 int g_MaxEnemies{ 80 };
 int g_MaxSpawners{ 8 };
@@ -105,6 +107,7 @@ void UpdateEnemyPos(const int movement, Entity& entity);
 void UpdateLevel(int level);
 void UpdateTime();
 void UpdateBeam();
+void UpdateScore();
 void MoveEntity(const Direction& dir, Entity& entity);
 bool IsMazeCellPLayerOrPath(Entity& entity);
 bool IsEnemyPassedPLayer(Entity& entity);

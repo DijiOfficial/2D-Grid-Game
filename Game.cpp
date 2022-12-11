@@ -10,11 +10,11 @@ void Start()
 {
 	InitializeTextures();
 	InitializeMusic();
-	TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf", 48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+
 	const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 	InitializeMaze();
 	InitializeGameResources(playerStartPosX, playerStartPosY);
-	//GenerateNewMaze();   //uncomment for randomGen of first level
+	GenerateNewMaze();   //uncomment for randomGen of first level
 
 	const float scale{ 0.5f };
 	g_ButtonRect.left = g_WindowWidth / 2 - g_StartButton.width / 2 * scale;
@@ -33,11 +33,15 @@ void Draw()
 		{
 			DrawTexture(g_LostGamePage, Rectf{ 0.f,0.f,g_WindowWidth,g_WindowHeight });
 			DrawTexture(g_RetryButton, g_ButtonRect);
+			DrawTexture(g_MaxScoreTexture, Point2f{ 20.f, 50.f });
+			DrawTexture(g_ScoreText, Point2f{ 20.f,50.f + g_MaxScoreTexture.height });
+			DrawTexture(g_ScoreTexture, Point2f{ 20.f + g_ScoreText.width,50.f + g_MaxScoreTexture.height });
 		}
 		else
 		{
 			DrawMaze();
-			DrawTexture(g_LevelTexture, Point2f{ 20.f, g_WindowHeight - 80.f });
+			DrawTexture(g_LevelTexture, Point2f{ 20.f, g_WindowHeight - 50.f });
+			DrawTexture(g_ScoreTexture, Point2f{ g_WindowWidth - 100.f,g_WindowHeight - 50.f });
 			DrawBeams();
 			if (g_IsInMenu)
 				DrawTexture(g_InfoPanel, Point2f{ 0.f,0.f });
@@ -61,6 +65,12 @@ void Update(float elapsedSec)
 		KillEnemy();
 		KillBoss();
 		DeleteBeam();
+		UpdateScore();
+	}
+	if (IsGameLost() && g_MaxScore < g_Score)
+	{
+		g_MaxScore = g_Score;
+		TextureFromString("Max score: " + std::to_string(g_MaxScore), "resources/goudysto.ttf", 36, Color4f{ 1.f,0.5f,0.f,0.8f }, g_MaxScoreTexture);
 	}
 }
 
@@ -69,8 +79,10 @@ void End()
 	for (int i = 0; i < g_NrOfRows; ++i)
 	{
 		delete[] g_MazeArray[i];
+		g_MazeArray[i] = nullptr;
 	}
 	delete[] g_MazeArray;
+	g_MazeArray = nullptr;
 
 	for (int i = 0; i < g_BeamArray.size(); i++)
 	{
@@ -153,6 +165,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 		if (IsPointInRect(mousePos, g_ButtonRect))
 		{
 			g_LevelNr = 0;
+			g_Score = 0;
 			//const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 			//InitializeGameResources(playerStartPosX, playerStartPosY);
 			GenerateNewMaze();
@@ -175,8 +188,9 @@ void GenerateNewMaze()
 	if (g_Boss.isAlive) ClearBoss();
 	g_LevelNr++;
 	UpdateLevel(g_LevelNr);
+	if (g_LevelNr > 1) g_Score += 100;
 	//generating new maze size
-	int cols{ (rand() % 6) * 2 + 25 };
+	int cols{ int(g_LevelNr/2 + 1) * 2 + 21 };
 	int rows{ cols };
 	g_BlockSizeX = { g_WindowWidth / rows };
 	g_BlockSizeY = { g_WindowHeight / cols };
@@ -434,7 +448,7 @@ void UpdateTime()
 	}
 
 	//spawn enemies
-	if (g_TotalTimePassedForSpawner > 0 and g_TotalTimePassedForSpawner - 2 >= 0)
+	if (g_TotalTimePassedForSpawner > 0 and g_TotalTimePassedForSpawner - (5.f-g_LevelNr/5.f) >= 0)
 	{
 		if (g_Boss.isAlive) SpawnEnemy(g_Boss.x, g_Boss.y);
 		for (int i = 0; i < g_MaxSpawners; i++)
@@ -474,7 +488,12 @@ void UpdatePlayerPos(const Entity& player)
 
 void UpdateLevel(int level)
 {
-	TextureFromString(std::to_string(level), "resources/goudysto.ttf", 48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+	TextureFromString(std::to_string(level), "resources/goudysto.ttf", 32, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+}
+
+void UpdateScore()
+{
+	TextureFromString(std::to_string(g_Score), "resources/goudysto.ttf", 36, Color4f{ 1.f,0.5f,0.f,0.8f }, g_ScoreTexture);
 }
 
 void UpdateEnemyPos(const int movement, Entity& entity)
@@ -582,16 +601,16 @@ void InitializeMaze()
 			g_MazeArray[j][i] = int(MazeEntity::path);
 		}
 	}
-	for (size_t j = 0; j < 5; j++)							//also dont need this if 1st level randGenerated
-	{														//
-		g_MazeArray[j + 10][10] = int(MazeEntity::wall);	//
-		g_MazeArray[10][j + 10] = int(MazeEntity::wall);	//
-		g_MazeArray[15][j + 10] = int(MazeEntity::wall);	//
-		g_MazeArray[j + 10][15] = int(MazeEntity::wall);	//
-	}														//
-															//
-	g_MazeArray[9][1] = int(MazeEntity::endPoint);			//
-	CreateSpawner(7, 18);
+	//for (size_t j = 0; j < 5; j++)							//also dont need this if 1st level randGenerated
+	//{														//
+	//	g_MazeArray[j + 10][10] = int(MazeEntity::wall);	//
+	//	g_MazeArray[10][j + 10] = int(MazeEntity::wall);	//
+	//	g_MazeArray[15][j + 10] = int(MazeEntity::wall);	//
+	//	g_MazeArray[j + 10][15] = int(MazeEntity::wall);	//
+	//}														//
+	//														//
+	//g_MazeArray[9][1] = int(MazeEntity::endPoint);			//
+	//CreateSpawner(7, 18);
 	//g_MazeArray[4][18] = int(MazeEntity::spawner);			//
 }
 
@@ -623,6 +642,11 @@ void InitializeTextures()
 	TextureFromFile("resources/beam-texture1.png", g_BeamTexture[0]);
 	TextureFromFile("resources/beam-texture2.png", g_BeamTexture[1]);
 	TextureFromFile("resources/info-panel.png", g_InfoPanel);
+
+	//TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf", 42, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
+	TextureFromString(std::to_string(g_Score), "resources/goudysto.ttf", 36, Color4f{1.f,0.5f,0.f,0.8f}, g_ScoreTexture);
+	TextureFromString("Score: ", "resources/goudysto.ttf", 36, Color4f{ 1.f,0.5f,0.f,0.8f }, g_ScoreText);
+	TextureFromString("Max score: "+std::to_string(g_MaxScore), "resources/goudysto.ttf", 36, Color4f{1.f,0.5f,0.f,0.8f}, g_MaxScoreTexture);
 }
 
 void InitializeMusic()
@@ -652,6 +676,9 @@ void DeleteTextures()
 	DeleteTexture(g_Boss.texture);
 	DeleteTexture(g_SpawnerTexture);
 	DeleteTexture(g_Enemy);
+	DeleteTexture(g_ScoreText);
+	DeleteTexture(g_ScoreTexture);
+	DeleteTexture(g_MaxScoreTexture);
 }
 
 // Draw functions
@@ -1110,7 +1137,7 @@ void DeleteBeam()
 {
 	for (int i = 0; i < g_BeamArray.size(); i++)
 	{	
-		if (CheckBeamCollision(g_BeamArray[i]) || CheckEnemyCollision(g_BeamArray[i]) or CheckBossCollision(g_BeamArray[i]))
+		if (CheckBeamCollision(g_BeamArray[i]) || CheckEnemyCollision(g_BeamArray[i]) || CheckBossCollision(g_BeamArray[i]))
 			g_BeamArray.erase(g_BeamArray.begin() + i);
 	}
 }
@@ -1130,6 +1157,7 @@ void KillEnemy()
 					{
 						g_MazeArray[pEnemyArray[i].x][pEnemyArray[i].y] = int(MazeEntity::path);
 						pEnemyArray[i].isAlive = false;
+						g_Score += 50;
 						pEnemyArray[i].x = -1;
 						pEnemyArray[i].y = -1;
 						//Mix_PlayMusic(g_EnemyDeath, 0);
@@ -1165,6 +1193,7 @@ void KillBoss()
 			g_Boss.health -= 1;
 			if (g_Boss.health == 0)
 			{
+				g_Score += (4 * g_LevelNr / g_LevelBossRoom) * 50;
 				ClearBoss();
 				SpawnLadder();
 				//Mix_PlayMusic(g_BossDeath, 0);
