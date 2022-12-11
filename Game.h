@@ -48,19 +48,20 @@ enum class MazeEntity
 }; 
 
 struct Entity {
-	int x;
-	int y;
-	int health;
+	int x{ -1 };
+	int y{ -1 };
+	int health{ 1 };
 	Texture texture;
 	Direction currDir{ Direction::right };
-	int totalMovement;
-	bool isBoss;
-	bool isFollowing;
-	bool isPlayableCharacter;
-	bool isAlive{ true };
+	int totalMovement{ 0 };
+	bool isBoss{ false };
+	bool isFollowing{ false };
+	bool isPlayableCharacter{ false };
+	bool isAlive{ false };
+	bool isSpawner{ false };
 };
 
-Entity g_Player{}, g_Enemy1{}, g_Boss{};
+Entity g_Player{}, g_Boss{};
 struct Beam {
 	float x;
 	float y;
@@ -73,11 +74,18 @@ std::vector<Entity> g_EnemyArray{};
 std::vector<Entity> g_SpawnerArray{};
 
 Texture g_StartPage{}, g_StartButton{}, g_LostGamePage{}, g_RetryButton{}, g_BeamTexture[2]{};
-Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_InfoPanel{}, g_SpawnerTexture{};
+Texture g_WallTexture{}, g_PathTexture{}, g_EndPointTexture{}, g_LevelTexture{}, g_InfoPanel{}, g_SpawnerTexture{}, g_Enemy{};
 Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false }, g_IsInMenu{ false };
 int g_LevelNr{ 1 };
 int g_LevelBossRoom{ 2 };
+
+int g_MaxEnemies{ 80 };
+int g_MaxSpawners{ 8 };
+Entity* pEnemyArray{ new Entity[g_MaxEnemies]{} };
+Entity* pSpawnerArray{ new Entity[g_MaxSpawners]{} };
+
+
 // Declare your own functions here
 
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
@@ -104,15 +112,18 @@ bool IsGameLost();
 void DeleteTextures();
 void InitializeTextures();
 void ClearEnemies();
+void ClearSpawners();
 void ClearAllBeams();
 void KillEnemy();
 void KillBoss();
 void SpawnLadder();
 bool CheckEnemyCollision(const Beam& beam);
 bool CheckBossCollision(const Beam& beam);
+Point2i returnCollisionXY(const Beam& beam);
 
 void CreateSpawner(int x, int y);
 void SpawnEnemy(int x, int y);
+void CreateEnemy(int x, int y);
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

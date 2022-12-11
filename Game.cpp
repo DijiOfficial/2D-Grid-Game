@@ -77,6 +77,11 @@ void End()
 		g_BeamArray.erase(g_BeamArray.begin() + i);
 	}
 
+	delete pEnemyArray;
+	delete pSpawnerArray;
+	pEnemyArray = nullptr;
+	pSpawnerArray = nullptr;
+
 	DeleteTextures();
 }
 #pragma endregion gameFunctions
@@ -143,8 +148,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 	{
 		if (IsPointInRect(mousePos, g_ButtonRect))
 		{
-			g_LevelNr = 1;
-			UpdateLevel(g_LevelNr);
+			g_LevelNr = 0;
 			//const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 			//InitializeGameResources(playerStartPosX, playerStartPosY);
 			GenerateNewMaze();
@@ -163,6 +167,7 @@ void GenerateNewMaze()
 	//Clearing previous level resources
 	ClearAllBeams();
 	ClearEnemies();
+	ClearSpawners();
 	g_LevelNr++;
 	UpdateLevel(g_LevelNr);
 	//generating new maze size
@@ -230,6 +235,10 @@ void GenerateNewMaze()
 		g_Boss.isBoss = true;
 		g_Boss.isAlive = true;
 		g_Boss.health = 4 * g_LevelNr / g_LevelBossRoom;
+		g_MazeArray[g_Boss.x][g_Boss.y] = int(MazeEntity::boss);
+		g_MazeArray[g_Boss.x + 1][g_Boss.y] = int(MazeEntity::boss);
+		g_MazeArray[g_Boss.x][g_Boss.y + 1] = int(MazeEntity::boss);
+		g_MazeArray[g_Boss.x + 1][g_Boss.y + 1] = int(MazeEntity::boss);
 	}
 	else
 	{
@@ -268,20 +277,20 @@ void GenerateNewMaze()
 		}
 
 		//generate the enemy
-		while (true)
-		{
-			g_Enemy1.x = { rand() % (g_NrOfRows - 2) + 1 };
-			g_Enemy1.y = { rand() % (g_NrOfCols - 2) + 1 };
+		//while (true)
+		//{
+		//	g_Enemy1.x = { rand() % (g_NrOfRows - 2) + 1 };
+		//	g_Enemy1.y = { rand() % (g_NrOfCols - 2) + 1 };
 
-			if (GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y)) > 8)
-			{
-				if (endPointX != g_Enemy1.x or g_Enemy1.y != enemyY) break;
-			}
+		//	if (GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y)) > 8)
+		//	{
+		//		if (endPointX != g_Enemy1.x or g_Enemy1.y != enemyY) break;
+		//	}
 
-		}
+		//}
 
 		g_MazeArray[endPointX][endPointY] = int(MazeEntity::endPoint);
-		g_Enemy1.isAlive = true;
+		//g_Enemy1.isAlive = true;
 
 		//Generate random Paths openings
 		for (int i = 0; i < int(4 * (g_NrOfCols + g_NrOfRows) / 5); i++)
@@ -347,7 +356,7 @@ void Display2DArray()
 	{
 		for (int j = 0; j < g_NrOfCols; j++)
 		{
-			std::cout << " " << g_MazeArray[i][j] << " ";
+			std::cout << " " << g_MazeArray[j][g_NrOfCols - 1 - i] << " ";
 		}
 		std::cout << "\n";
 	}
@@ -355,8 +364,27 @@ void Display2DArray()
 
 void ClearEnemies()
 {
-	g_Enemy1.isAlive = false;
-	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::path);
+	for (int i = 0; i < g_MaxEnemies; i++)
+	{
+		if (pEnemyArray[i].isAlive)
+		{
+			pEnemyArray[i].isAlive = false;
+			g_MazeArray[pEnemyArray[i].x][pEnemyArray[i].y] = int(MazeEntity::path);
+		}
+	}
+}
+
+void ClearSpawners()
+{
+	for (int i = 0; i < g_MaxSpawners; i++)
+	{
+		if (pSpawnerArray[i].isAlive)
+		{
+
+			pSpawnerArray[i].isAlive = false;
+			g_MazeArray[pSpawnerArray[i].x][pSpawnerArray[i].y] = int(MazeEntity::path);
+		}
+	}
 }
 
 // Update functions
@@ -376,23 +404,28 @@ void UpdateTime()
 		g_Nrframes = 0;
 	}
 
-	//if (g_TotalTimePassedForSpawner > 0 and g_TotalTimePassedForSpawner - 2 >= 0)
-	//{
-	//	for (int i = 0; i < g_SpawnerArray.size(); i++)
-	//	{
-	//		SpawnEnemy(g_SpawnerArray[i].x, g_SpawnerArray[i].y);
-	//	}
-	//	g_TotalTimePassedForSpawner = 0;
-	//}
-
-	if (g_Enemy1.isAlive)
+	//spawn enemies
+	if (g_TotalTimePassedForSpawner > 0 and g_TotalTimePassedForSpawner - 2 >= 0)
 	{
-		if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
+		for (int i = 0; i < g_MaxSpawners; i++)
 		{
-			UpdateEnemyPos(5, g_Enemy1);
-			g_TotalTimePassed = 0;
+			if (pSpawnerArray[i].isAlive) SpawnEnemy(pSpawnerArray[i].x, pSpawnerArray[i].y);
+		}
+		g_TotalTimePassedForSpawner = 0;
+	}
+
+	//update enemies
+	for (int i = 0; i < g_MaxEnemies; i++)
+	{
+		if (pEnemyArray[i].isAlive)
+		{
+			if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
+			{
+				UpdateEnemyPos(5, pEnemyArray[i]);
+			}
 		}
 	}
+
 	if (g_Boss.isAlive)
 	{
 		if (g_TotalTimePassed > 0 and g_TotalTimePassed - enemySpeed >= 0)
@@ -401,6 +434,7 @@ void UpdateTime()
 			g_TotalTimePassed = 0;
 		}
 	}
+	if (g_TotalTimePassed - enemySpeed >= 0)g_TotalTimePassed = 0;
 }
 
 void UpdatePlayerPos(const Entity& player)
@@ -419,7 +453,7 @@ void UpdateEnemyPos(const int movement, Entity& entity)
 	if (entity.isBoss) entity.isFollowing = true;
 	else
 	{
-		float distBetPlAndEn = GetDistance(float(g_Player.x), float(g_Player.y), float(g_Enemy1.x), float(g_Enemy1.y));
+		float distBetPlAndEn = GetDistance(float(g_Player.x), float(g_Player.y), float(entity.x), float(entity.y));
 		if (distBetPlAndEn <= 5 and not entity.isFollowing) entity.isFollowing = true, SwitchEntityDirection(entity);
 		else if (distBetPlAndEn >= 10) entity.isFollowing = false;
 	}
@@ -527,7 +561,8 @@ void InitializeMaze()
 	}														//
 															//
 	g_MazeArray[9][1] = int(MazeEntity::endPoint);			//
-	g_MazeArray[4][18] = int(MazeEntity::spawner);			//
+	CreateSpawner(7, 18);
+	//g_MazeArray[4][18] = int(MazeEntity::spawner);			//
 }
 
 void InitializeGameResources(int playerStartPosX, int playerStartPosY)
@@ -535,14 +570,8 @@ void InitializeGameResources(int playerStartPosX, int playerStartPosY)
 	g_Player.x = playerStartPosX;
 	g_Player.y = playerStartPosY;
 
-	g_Enemy1.x = 20; // don t need these if the first level is randomly generated
-	g_Enemy1.y = 20; //
-	g_Enemy1.currDir = Direction::right; //
-	g_MazeArray[g_Enemy1.x][g_Enemy1.y] = int(MazeEntity::enemy); //
-
 	g_TimeStart = std::chrono::system_clock::now();
 	g_Player.isPlayableCharacter = true;
-	g_Enemy1.isPlayableCharacter = false;
 	g_Boss.isAlive = false;
 }
 
@@ -556,7 +585,7 @@ void InitializeTextures()
 	TextureFromFile("resources/path.jpg", g_PathTexture);
 	TextureFromFile("resources/end-point.jpg", g_EndPointTexture);
 	TextureFromFile("resources/wall.jpg", g_WallTexture);
-	TextureFromFile("resources/enemy-texture.jpg", g_Enemy1.texture);
+	TextureFromFile("resources/enemy-texture.jpg", g_Enemy);
 	TextureFromFile("resources/player-texture.jpg", g_Player.texture);
 	TextureFromFile("resources/Boss.png", g_Boss.texture);
 	TextureFromFile("resources/spawner.png", g_SpawnerTexture);
@@ -575,13 +604,13 @@ void DeleteTextures()
 	DeleteTexture(g_PathTexture);
 	DeleteTexture(g_EndPointTexture);
 	DeleteTexture(g_Player.texture);
-	DeleteTexture(g_Enemy1.texture);
 	DeleteTexture(g_LostGamePage);
 	DeleteTexture(g_LevelTexture);
 	DeleteTexture(g_BeamTexture[0]);
 	DeleteTexture(g_BeamTexture[1]);
 	DeleteTexture(g_Boss.texture);
 	DeleteTexture(g_SpawnerTexture);
+	DeleteTexture(g_Enemy);
 }
 
 // Draw functions
@@ -607,12 +636,18 @@ void DrawMaze()
 				DrawTexture(g_SpawnerTexture, cellRect);
 			else if (g_MazeArray[i][j] == int(MazeEntity::enemy))
 			{
-				if (g_Enemy1.isAlive)
-					DrawTexture(g_Enemy1.texture, cellRect);
-				else
+				for (int k = 0; k < g_MaxEnemies; k++)
 				{
-					g_MazeArray[i][j] = int(MazeEntity::path);
-					DrawTexture(g_PathTexture, cellRect);
+					if (pEnemyArray[k].x == i and pEnemyArray[k].y == j)
+					{
+						if (pEnemyArray[k].isAlive)
+							DrawTexture(g_Enemy, cellRect);
+						else
+						{
+							g_MazeArray[i][j] = int(MazeEntity::path);
+							DrawTexture(g_PathTexture, cellRect);
+						}
+					}
 				}
 			}
 			else if (g_MazeArray[i][j] == int(MazeEntity::boss) and g_MazeArray[i + 1][j + 1] == int(MazeEntity::boss))
@@ -826,7 +861,13 @@ bool IsDirectionCorrect(Entity& entity)
 // Lost game functions
 bool IsGameLost()
 {
-	if (g_Enemy1.isAlive) return g_Player.x == g_Enemy1.x and g_Player.y == g_Enemy1.y;
+	if (!g_Boss.isAlive)
+	{
+		for (int i = 0; i < g_MaxEnemies; i++)
+		{
+			if (g_Player.x == pEnemyArray[i].x and g_Player.y == pEnemyArray[i].y) return true;
+		}
+	};
 	if (g_Boss.isAlive)
 	{
 		bool isCollindingBossCellBottomLeft	{ g_Player.x == g_Boss.x + 0	and		g_Player.y == g_Boss.y + 0	};
@@ -840,18 +881,56 @@ bool IsGameLost()
 }
 
 //spawner functions
-//void CreateSpawner(int x, int y)
-//{
-//	//g_SpawnerArray.emplace_back(x, y);
-//}
-//
-//void SpawnEnemy(int x, int y)
-//{
-//	//for (int i = 0; i < 5; i++)
-//	//{
-//
-//	//}
-//}
+void CreateSpawner(int x, int y)
+{
+	for (int i = 0; i < g_MaxSpawners; i++)
+	{
+		if (!pSpawnerArray[i].isSpawner)
+		{
+			pSpawnerArray[i].isSpawner = true;
+			pSpawnerArray[i].isAlive = true;
+			pSpawnerArray[i].x = x;
+			pSpawnerArray[i].y = y;
+			g_MazeArray[x][y] = int(MazeEntity::spawner);
+			break;
+		}
+	}
+}
+
+void CreateEnemy(int x, int y) 
+{
+	for (int i = 0; i < g_MaxEnemies; i++)
+	{
+		if (!pEnemyArray[i].isAlive)
+		{
+			std::cout << "created enemy in " << x << ", " << y << std::endl;
+			pEnemyArray[i].x = x;
+			pEnemyArray[i].y = y;
+			pEnemyArray[i].isAlive = true;
+			pEnemyArray[i].texture = g_Enemy;
+			g_MazeArray[x][y] = int(MazeEntity::enemy);
+			break;
+		}
+	}
+}
+
+void SpawnEnemy(int x, int y)
+{
+	bool enemyCreated{ false };
+	for (int i = 0; i < 7; i++)
+	{
+		for (int j = 0; j < 7; j++)
+		{
+			if (g_MazeArray[x - 3 + i][y + 3 - j] == int(MazeEntity::path) and !enemyCreated)
+			{
+				CreateEnemy(x - 3 + i, y + 3 - j);
+				enemyCreated = true;
+				break;
+			}
+		}
+		if (enemyCreated) break;
+	}
+}
 
 // Beams functions
 bool CheckBeamCollision(const Beam& beam)
@@ -910,6 +989,34 @@ bool CheckEnemyCollision(const Beam& beam)
 	return false;
 }
 
+Point2i returnCollisionXY(const Beam& beam)
+{
+	Point2i beamPosInArr{ int(beam.x / g_BlockSizeX) , int(beam.y / g_BlockSizeY) };
+	switch (beam.currDir)
+	{
+		case(Direction::right):
+			beamPosInArr.x = int(beam.x / g_BlockSizeX - 0.2f) + 1;
+			break;
+		case(Direction::left):
+			beamPosInArr.x = int(beam.x / g_BlockSizeX + 0.2f);
+			break; 
+		case(Direction::up):
+			beamPosInArr.y = int(beam.y / g_BlockSizeY - 0.2f) + 1;
+			break; 
+		case(Direction::down):
+			beamPosInArr.y = int(beam.y / g_BlockSizeY + 0.2f);
+			break; 
+		default:
+			break;
+	}
+	//if (beam.currDir == Direction::right) beamPosInArr.x = int(beam.x / g_BlockSizeX - 0.2f);
+	//else if (beam.currDir == Direction::left) beamPosInArr.x = int(beam.x / g_BlockSizeX + 0.2f);
+	//else if (beam.currDir == Direction::up) beamPosInArr.y = int(beam.y / g_BlockSizeY - 0.2f);
+	//else beamPosInArr.y = int(beam.y / g_BlockSizeY + 0.2f);
+	return Point2i{ beamPosInArr.x, beamPosInArr.y };
+
+}
+
 bool CheckBossCollision(const Beam& beam)
 {
 
@@ -962,7 +1069,14 @@ void KillEnemy()
 	{
 		if (CheckEnemyCollision(g_BeamArray[i]))
 		{
-			g_Enemy1.isAlive = false;
+			Point2i beamPosInArr = returnCollisionXY(g_BeamArray[i]);
+			for (int i = 0; i < g_MaxEnemies; i++)
+			{
+				if (pEnemyArray[i].isAlive)
+				{
+					if (pEnemyArray[i].x == beamPosInArr.x and pEnemyArray[i].y == beamPosInArr.y) pEnemyArray[i].isAlive = false;
+				}
+			}
 		}
 	}
 }
