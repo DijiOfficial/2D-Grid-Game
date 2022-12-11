@@ -79,6 +79,7 @@ bool g_IsGameStarted{ false }, g_IsInMenu{ false };
 int g_LevelNr{ 1 };
 int g_LevelBossRoom{ 2 };
 // Declare your own functions here
+
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
 void DrawMaze();
