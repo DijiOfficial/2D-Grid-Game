@@ -9,7 +9,7 @@
 void Start()
 {
 	InitializeTextures();
-
+	InitializeMusic();
 	TextureFromString(std::to_string(g_LevelNr), "resources/goudysto.ttf", 48, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
 	const int playerStartPosX{ 1 }, playerStartPosY{ 1 };
 	InitializeMaze();
@@ -143,6 +143,10 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 	{
 		if (IsPointInRect(mousePos, g_ButtonRect))
 			g_IsGameStarted = true;
+			Mix_HaltMusic();
+			Mix_PlayMusic(g_StartSound, 0);
+			Mix_FadeOutMusic(1000);
+			Mix_PlayMusic(g_GameMusic, -1);
 	}
 	if (IsGameLost())
 	{
@@ -199,6 +203,7 @@ void GenerateNewMaze()
 	
 	if (g_LevelNr % g_LevelBossRoom == 0)
 	{
+		Mix_PlayMusic(g_BossMusic, -1);
 		//fill 
 		for (int i = 0; i < g_NrOfCols; i++)
 		{
@@ -243,6 +248,10 @@ void GenerateNewMaze()
 	}
 	else
 	{
+		if ((g_LevelNr - 1) % g_LevelBossRoom == 0)
+		{
+			Mix_PlayMusic(g_GameMusic, -1);
+		}
 		//fill it
 		for (int i = 0; i < g_NrOfCols; i++)
 		{
@@ -614,6 +623,17 @@ void InitializeTextures()
 	TextureFromFile("resources/beam-texture1.png", g_BeamTexture[0]);
 	TextureFromFile("resources/beam-texture2.png", g_BeamTexture[1]);
 	TextureFromFile("resources/info-panel.png", g_InfoPanel);
+}
+
+void InitializeMusic()
+{
+	g_GameMusic = Mix_LoadMUS("Resources/Audio/levelMusic.mp3");
+	g_MenuMusic = Mix_LoadMUS("Resources/Audio/menu.mp3");
+	g_BossMusic = Mix_LoadMUS("Resources/Audio/bossMusic.mp3");
+	g_StartSound = Mix_LoadMUS("Resources/Audio/gameStart.mp3");
+	g_BossDeath = Mix_LoadMUS("Resources/Audio/bossDeath.mp3");
+	g_EnemyDeath = Mix_LoadMUS("Resources/Audio/enemyDeath.mp3");
+	Mix_PlayMusic(g_MenuMusic, -1);
 }
 
 void DeleteTextures()
@@ -1112,6 +1132,7 @@ void KillEnemy()
 						pEnemyArray[i].isAlive = false;
 						pEnemyArray[i].x = -1;
 						pEnemyArray[i].y = -1;
+						//Mix_PlayMusic(g_EnemyDeath, 0);
 					}
 				}
 			}
@@ -1146,6 +1167,7 @@ void KillBoss()
 			{
 				ClearBoss();
 				SpawnLadder();
+				//Mix_PlayMusic(g_BossDeath, 0);
 			}
 		}
 	}

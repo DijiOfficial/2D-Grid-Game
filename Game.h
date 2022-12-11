@@ -4,7 +4,7 @@
 using namespace utils;
 #pragma region gameInformation
 // Set your name and group in the title here
-std::string g_WindowTitle{ "Project name - Name, firstname - 1DAExx" };
+std::string g_WindowTitle{ "MazeRunner - Burisser Dylan & Raileanu Ioana - 1DAE10" };
 
 // Change the window dimensions here
 float g_WindowHeight{ 720 };
@@ -14,6 +14,14 @@ float g_WindowWidth{ g_WindowHeight }; //mofifiable width if we have more column
 	
 
 #pragma region ownDeclarations
+//Audio Var
+Mix_Music* g_GameMusic{};
+Mix_Music* g_MenuMusic{};
+Mix_Music* g_BossMusic{};
+Mix_Music* g_StartSound{};
+Mix_Music* g_BossDeath{};
+Mix_Music* g_EnemyDeath{};
+
 // Maze variables
 int g_NrOfRows{ 26 }, g_NrOfCols{ 26 };
 int** g_MazeArray = new int* [g_NrOfRows];
@@ -87,7 +95,7 @@ Entity* pSpawnerArray{ new Entity[g_MaxSpawners]{} };
 
 
 // Declare your own functions here
-
+void InitializeMusic();
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
 void DrawMaze();

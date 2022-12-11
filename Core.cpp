@@ -21,7 +21,13 @@ bool g_IsVSyncOn{ false };
 
 void Initialize()
 {
-	
+	if (Mix_Init(MIX_INIT_OGG | MIX_INIT_MP3) == -1)
+	{
+		std::cout << "Failed to init SDL2_mixer" << std::endl;
+		QuitOnSDLError();
+	}
+
+	Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 0);
 	//Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
