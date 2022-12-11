@@ -68,7 +68,7 @@ Rectf g_ButtonRect{} ;
 bool g_IsGameStarted{ false };
 int g_LevelNr{ 1 };
 
-// Declare your own functions here
+// Declare your own functions
 void InitializeGameResources(int playerStartPosX, int playerStartPosY);
 void InitializeMaze();
 void DrawMaze();
