@@ -122,6 +122,9 @@ bool CheckBossCollision(const Beam& beam);
 Point2i returnCollisionXY(const Beam& beam);
 
 void CreateSpawner(int x, int y);
+void GenerateSpawners();
+void ClearBoss();
+
 void SpawnEnemy(int x, int y);
 void CreateEnemy(int x, int y);
 #pragma endregion ownDeclarations
