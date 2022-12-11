@@ -1155,6 +1155,7 @@ void KillEnemy()
 				{
 					if (pEnemyArray[i].x == beamPosInArr.x and pEnemyArray[i].y == beamPosInArr.y)
 					{
+						DeleteBeam();
 						g_MazeArray[pEnemyArray[i].x][pEnemyArray[i].y] = int(MazeEntity::path);
 						pEnemyArray[i].isAlive = false;
 						g_Score += 50;
