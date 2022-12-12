@@ -488,11 +488,13 @@ void UpdatePlayerPos(const Entity& player)
 
 void UpdateLevel(int level)
 {
+	DeleteTexture(g_LevelTexture);
 	TextureFromString(std::to_string(level), "resources/goudysto.ttf", 32, Color4f{ 1.f,0.5f,0.f,0.8f }, g_LevelTexture);
 }
 
 void UpdateScore()
 {
+	DeleteTexture(g_ScoreText);
 	TextureFromString(std::to_string(g_Score), "resources/goudysto.ttf", 36, Color4f{ 1.f,0.5f,0.f,0.8f }, g_ScoreTexture);
 }
 
