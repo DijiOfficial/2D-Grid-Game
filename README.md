@@ -1,5 +1,5 @@
 # 2D-Grid-Game Maze like game
-It's a simple 2D grid game where you move through a maze to get the treasure at the end.
+It's a simple 2D grid game where you move through a maze to get the treasure at the end and score a maximum amounbt of points!
 
 # Version 1.0
 [Download](https://github.com/DijiOfficial/2D-Grid-Game/releases/tag/MazeRunner_v1.0) and Play Version 1.0 of MazeRunner by Raileanu Ioana and Burgisser Dylan
