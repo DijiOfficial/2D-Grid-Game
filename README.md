@@ -3,10 +3,11 @@ It's a simple 2D grid game where you move through a maze to get the treasure at 
 
 # Version 1.0
 [Download](https://github.com/DijiOfficial/2D-Grid-Game/releases/tag/MazeRunner_v1.0) and Play Version 1.0 of MazeRunner by Raileanu Ioana and Burgisser Dylan
-![Level reference](assets/img/level.png)
-![Boss Room reference](assets/img/bossRoom.png)
-![Start Menu reference](assets/img/menu.png)
-![End Menu reference](assets/img/endScreen.png)
+
+![Level reference](Resources/level.png)
+![Boss Room reference](Resources/bossRoom.png)
+![Start Menu reference](Resources/menu.png)
+![End Menu reference](Resources/endScreen.png)
 
 ## The mission
 
